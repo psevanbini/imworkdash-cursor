@@ -1,0 +1,233 @@
+V3, Dash2, Territory in Isolation
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ParentSquare - Territory Overview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Official ParentSquare Palette  */
+      --ps-green: #85ad33;
+      --ps-dark-green: #618025;
+      --ps-blue: #7bbaf0;
+      --ps-gold: #f2b001;
+      --ps-light-green: #e5f1d4;
+      --ps-light-gray: #f7f8f8;
+      --ps-dark-gray: #444444;
+      --ps-red: #d9534f;
+      --ps-light-red: #f2dede;
+    }
+
+    * { box-sizing: border-box; font-family: "Montserrat", Arial, sans-serif; }
+    body { margin: 0; background: var(--ps-light-gray); color: var(--ps-dark-gray); }
+    .container { max-width: 1450px; margin: 0 auto; padding: 24px; }
+
+    header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+    .logo img { height: 40px; width: auto; } 
+    .header-text h1 { color: var(--ps-green); margin: 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
+    .header-text p { margin: 4px 0 0; color: #666; font-size: 14px; font-weight: 600; }
+
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--ps-green); min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
+    .card .main-val { font-size: 22px; font-weight: 700; color: var(--ps-dark-green); }
+    .card .sub-val { font-size: 13px; font-weight: 600; color: #777; margin-top: 4px; }
+    .card .label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: 700; margin-top: 8px; }
+
+    .summary-cap-bar { height: 8px; background: #eee; border-radius: 4px; margin-top: 10px; overflow: hidden; display: flex; }
+    .cap-fill-deals { height: 100%; background: var(--ps-green); transition: width 0.5s; }
+    .cap-fill-projects { height: 100%; background: var(--ps-blue); transition: width 0.5s; }
+
+    .group-header { background: var(--ps-light-green); color: var(--ps-dark-green); padding: 8px 12px; margin: 20px 0 10px 0; font-weight: 700; font-size: 11px; text-transform: uppercase; border-radius: 4px; border-left: 4px solid var(--ps-dark-green); }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
+    .btn-action { background: white; border: 1px solid #ddd; padding: 6px 12px; cursor: pointer; font-size: 11px; font-weight: 600; border-radius: 4px; transition: 0.2s; }
+    .btn-action.active { background: var(--ps-green) !important; color: white !important; border-color: var(--ps-green) !important; }
+    .btn-sort.active-sort { background: var(--ps-blue); color: white; border-color: var(--ps-blue); }
+
+    table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #eee; font-size: 12px; margin-bottom: 10px; }
+    th { background: #f9f9f9; color: var(--ps-dark-gray); padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
+    td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    tbody tr:nth-child(even) { background-color: #fafafa; }
+
+    .im-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .im-card { background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-top: 3px solid var(--ps-green); height: 180px; display: flex; flex-direction: column; justify-content: space-between; }
+    .im-card h3 { margin: 0; font-size: 14px; color: var(--ps-dark-green); }
+    .im-card .stats { font-size: 11px; color: #666; line-height: 1.4; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; }
+    .modal { background: white; padding: 20px; border-radius: 8px; width: 350px; }
+    .modal textarea { width: 100%; height: 80px; margin: 10px 0; font-size: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: none; }
+
+    .edit-btn { cursor: pointer; color: var(--ps-blue); font-size: 12px; margin-left: 5px; }
+    
+    footer { text-align: center; padding: 40px; color: var(--ps-dark-gray); font-size: 10px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo"><img src="logo.png" alt="ParentSquare"></div>
+    <div class="header-text">
+      <h1>Territory Load Overview</h1>
+      <p>EST Regional Workload Categorization</p>
+    </div>
+  </header>
+
+  <div class="summary">
+    <div class="card">
+        <div class="main-val"><span id="t-im-count">0</span> IMs</div>
+        <div class="sub-val"><span id="t-strat-proj">0</span> Strategic Projects</div>
+    </div>
+    <div class="card">
+        <div class="main-val"><span id="t-total-pts">0</span> / <span id="t-max-pts">0</span> Total Points</div>
+        <div class="sub-val"><span id="t-deal-pts">0</span> Deal Points</div>
+        <div class="sub-val" style="margin-top:0;"><span id="t-proj-pts">0</span> Project Points</div>
+    </div>
+    <div class="card">
+        <div id="t-cap-pct" class="main-val">0%</div>
+        <div class="summary-cap-bar">
+            <div id="t-fill-deals" class="cap-fill-deals"></div>
+            <div id="t-fill-projects" class="cap-fill-projects"></div>
+        </div>
+        <div class="label">Capacity Used (T3 Average)</div>
+    </div>
+    <div class="card">
+        <div style="background-color: var(--ps-light-red); padding: 4px 8px; border-radius: 4px; display: inline-block; width: fit-content;">
+            <div id="t-risk-total" class="main-val" style="font-size: 18px;">0 At-Risk Deals</div>
+        </div>
+        <div id="t-risk-breakdown" class="sub-val" style="border-top: none; color: var(--ps-dark-gray);">0Y / 0R Health Breakdown</div>
+        <div id="t-past-due-proj" class="sub-val">0 Past Due Projects</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <button id="btn-list" class="btn-action active" onclick="switchLayout('list')">List View</button>
+      <button id="btn-card" class="btn-action" onclick="switchLayout('card')">Card View</button>
+    </div>
+    <div class="control-group">
+      <span style="font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; margin-right: 8px;">Group By:</span>
+      <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="setSort('tier')">Tier ↑↓</button>
+      <button id="sort-cap" class="btn-action btn-sort" onclick="setSort('cap')">% Cap ↑↓</button>
+    </div>
+  </div>
+
+  <div id="territory-display"></div>
+
+  <div id="note-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="modal-im-name" style="margin:0; font-size:14px; color:var(--ps-dark-green);">Edit Notes</h3>
+      <textarea id="note-text"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn-action" onclick="closeModal()">Cancel</button>
+        <button class="btn-action active" onclick="saveNote()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2026 ParentSquare • Implementation Manager Dashboard</footer>
+</div>
+
+<script>
+const MPC_VALUES = { "T1": 70, "T2": 90, "T3": 120, "T4": 120, "T5": 90 };
+let currentLayout = 'list', currentSort = 'tier', sortDir = 'desc', editingIM = null;
+
+let territoryIMs = [
+  { name: "Alex R.", tier: "T4", dealPts: 95, projPts: 20, deals: 14, projects: 3, pastDue: 1, yellowRisk: 2, redRisk: 1 },
+  // Adjusted Jordan M. to "High" Category (75/90 = 83%)
+  { name: "Jordan M.", tier: "T2", dealPts: 65, projPts: 10, deals: 9, projects: 2, pastDue: 0, yellowRisk: 1, redRisk: 0 },
+  { name: "Casey S.", tier: "T3", dealPts: 45, projPts: 0, deals: 10, projects: 0, pastDue: 0, yellowRisk: 0, redRisk: 0 },
+  { name: "Morgan L.", tier: "T1", dealPts: 52, projPts: 15, deals: 11, projects: 4, pastDue: 2, yellowRisk: 2, redRisk: 1 },
+  { name: "Riley W.", tier: "T2", dealPts: 80, projPts: 5, deals: 13, projects: 1, pastDue: 0, yellowRisk: 2, redRisk: 0 },
+  { name: "Taylor B.", tier: "T3", dealPts: 95, projPts: 25, deals: 14, projects: 5, pastDue: 1, yellowRisk: 2, redRisk: 2 },
+  { name: "Quinn J.", tier: "T1", dealPts: 30, projPts: 5, deals: 8, projects: 1, pastDue: 0, yellowRisk: 0, redRisk: 0 },
+  { name: "Skyler P.", tier: "T5", dealPts: 40, projPts: 12, deals: 9, projects: 2, pastDue: 0, yellowRisk: 0, redRisk: 0 }
+];
+
+function updateTerritoryMetrics() {
+    let tdPts = 0, tpPts = 0, tMax = 0, yR = 0, rR = 0, spCount = 0, pdCount = 0;
+    territoryIMs.forEach(im => {
+        tdPts += im.dealPts; tpPts += im.projPts; tMax += MPC_VALUES[im.tier];
+        spCount += im.projects; pdCount += im.pastDue; yR += im.yellowRisk; rR += im.redRisk;
+    });
+    const tPts = tdPts + tpPts, cap = Math.round((tPts / tMax) * 100);
+    document.getElementById('t-im-count').innerText = territoryIMs.length;
+    document.getElementById('t-strat-proj').innerText = spCount;
+    document.getElementById('t-total-pts').innerText = tPts;
+    document.getElementById('t-max-pts').innerText = tMax;
+    document.getElementById('t-deal-pts').innerText = tdPts;
+    document.getElementById('t-proj-pts').innerText = tpPts;
+    document.getElementById('t-cap-pct').innerText = cap + '%';
+    document.getElementById('t-fill-deals').style.width = (tdPts/tMax*100) + '%';
+    document.getElementById('t-fill-projects').style.width = (tpPts/tMax*100) + '%';
+    document.getElementById('t-risk-total').innerText = `${yR + rR} At-Risk Deals`;
+    document.getElementById('t-risk-breakdown').innerText = `${yR}Y / ${rR}R Health Breakdown`;
+    document.getElementById('t-past-due-proj').innerText = `${pdCount} Past Due Projects`;
+}
+
+function renderContent() {
+    const display = document.getElementById('territory-display');
+    display.innerHTML = '';
+    const sorted = [...territoryIMs].sort((a,b) => {
+        let vA = currentSort === 'tier' ? parseInt(a.tier.slice(1)) : (a.dealPts + a.projPts)/MPC_VALUES[a.tier];
+        let vB = currentSort === 'tier' ? parseInt(b.tier.slice(1)) : (b.dealPts + b.projPts)/MPC_VALUES[b.tier];
+        return sortDir === 'desc' ? vB - vA : vA - vB;
+    });
+    let groups = {};
+    sorted.forEach(im => {
+        const pct = Math.round(((im.dealPts + im.projPts) / MPC_VALUES[im.tier]) * 100);
+        const key = currentSort === 'tier' ? `Tier ${im.tier.slice(1)}` : (pct >= 90 ? "Critical (90%+)" : (pct >= 80 ? "High (80-89%)" : "Stable (Under 80%)"));
+        if (!groups[key]) groups[key] = []; groups[key].push(im);
+    });
+
+    Object.keys(groups).forEach(key => {
+        const h = document.createElement('div'); h.className = 'group-header'; h.innerText = key; display.appendChild(h);
+        if (currentLayout === 'list') {
+            const t = document.createElement('table');
+            t.innerHTML = `<thead><tr><th>IM Name</th><th>Deals (Pts)</th><th>Projs (Pts)</th><th>Total / Cap</th><th>% Cap</th><th>Risks (Y/R|P)</th><th>Notes</th></tr></thead><tbody id="b-${key.replace(/\s/g,'')}"></tbody>`;
+            display.appendChild(t); const b = t.querySelector('tbody');
+            groups[key].forEach(im => {
+                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
+                const c = pct >= 90 ? 'var(--ps-red)' : (pct >= 80 ? 'var(--ps-gold)' : 'var(--ps-green)');
+                const n = localStorage.getItem('note_t_'+im.name) || '';
+                b.innerHTML += `<tr><td><strong>${im.name}</strong></td><td>${im.deals} (${im.dealPts})</td><td>${im.projects} (${im.projPts})</td><td><strong>${tot}</strong> / ${m}</td><td><span style="color:${c}; font-weight:700;">${pct}%</span></td><td>${im.yellowRisk}Y / ${im.redRisk}R | <span style="${im.pastDue > 0 ? 'color:var(--ps-red);font-weight:bold;' : ''}">${im.pastDue}P</span></td><td>${n.substring(0,12)}${n.length>12?'...':''} <span class="edit-btn" onclick="openModal('${im.name}')">✎</span></td></tr>`;
+            });
+        } else {
+            const grid = document.createElement('div'); grid.className = 'im-grid'; display.appendChild(grid);
+            groups[key].forEach(im => {
+                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
+                const c = pct >= 90 ? 'var(--ps-red)' : (pct >= 80 ? 'var(--ps-gold)' : 'var(--ps-green)');
+                const n = localStorage.getItem('note_t_'+im.name) || 'None';
+                grid.innerHTML += `<div class="im-card" style="border-top-color:${c}">
+                    <div style="display:flex; justify-content:space-between;"><h3>${im.name}</h3><span style="font-weight:700; color:${c}; font-size:12px;">${pct}%</span></div>
+                    <div class="stats">Pts: <b>${tot}</b>/${m} | Deals: ${im.deals} | Projs: ${im.projects}<br>Risks: ${im.yellowRisk}Y/${im.redRisk}R | Projects past due: <b style="${im.pastDue > 0 ? 'color:var(--ps-red);' : ''}">${im.pastDue}</b></div>
+                    <div class="summary-cap-bar" style="height:6px;"><div style="width:${(im.dealPts/m)*100}%; background:var(--ps-green);"></div><div style="width:${(im.projPts/m)*100}%; background:var(--ps-blue);"></div></div>
+                    <div style="font-size:10px; color:#999; border-top:1px solid #eee; padding-top:5px; height:30px; overflow:hidden;">"${n}" <span class="edit-btn" onclick="openModal('${im.name}')">✎</span></div>
+                </div>`;
+            });
+        }
+    });
+}
+
+function setSort(t) {
+    if (currentSort === t) sortDir = sortDir === 'desc' ? 'asc' : 'desc'; else { currentSort = t; sortDir = 'desc'; }
+    document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active-sort'));
+    document.getElementById('sort-'+t).classList.add('active-sort'); renderContent();
+}
+
+function switchLayout(l) { 
+    currentLayout = l; document.getElementById('btn-list').classList.toggle('active', l==='list');
+    document.getElementById('btn-card').classList.toggle('active', l==='card'); renderContent(); 
+}
+
+function openModal(name) { editingIM = name; document.getElementById('modal-im-name').innerText = `Notes for ${name}`; document.getElementById('note-text').value = localStorage.getItem('note_t_'+name) || ''; document.getElementById('note-modal').style.display = 'flex'; }
+function closeModal() { document.getElementById('note-modal').style.display = 'none'; }
+function saveNote() { localStorage.setItem('note_t_'+editingIM, document.getElementById('note-text').value); closeModal(); renderContent(); }
+updateTerritoryMetrics(); renderContent();
+</script>
+</body>
+</html>
