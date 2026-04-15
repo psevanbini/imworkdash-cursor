@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ParentSquare — IM Workload Mockup Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ps-green: #85ad33;
+      --ps-dark-green: #618025;
+      --ps-blue: #7bbaf0;
+      --ps-light-gray: #f7f8f8;
+      --ps-dark-gray: #444444;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Montserrat", Arial, sans-serif;
+      background: var(--ps-light-gray);
+      color: var(--ps-dark-gray);
+    }
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: 10000;
+      padding: 12px 16px;
+      background: var(--ps-dark-green);
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      left: 12px;
+      top: 12px;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      min-height: 56px;
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 3px solid var(--ps-green);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .chrome-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ps-green);
+      line-height: 1.2;
+    }
+    .chrome-sub {
+      margin: 2px 0 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+    }
+    .chrome-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .chrome-controls label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ps-dark-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .chrome-controls select {
+      min-width: 200px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ps-dark-gray);
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .chrome-controls select:focus {
+      outline: 2px solid var(--ps-blue);
+      outline-offset: 2px;
+    }
+    .frame-wrap {
+      height: calc(100vh - 56px);
+      min-height: 400px;
+      position: relative;
+      background: var(--ps-light-gray);
+    }
+    .frame-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: none;
+      background: var(--ps-light-gray);
+    }
+    .frame-wrap iframe.is-active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#dashboard-main">Skip to dashboard content</a>
+
+  <header class="chrome" role="banner">
+    <div>
+      <h1 class="chrome-title">IM Workload Mockup Dashboard</h1>
+      <p class="chrome-sub">ParentSquare — prototype views (unchanged per screen)</p>
+    </div>
+    <div class="chrome-controls">
+      <label for="dashboard-view">View</label>
+      <select id="dashboard-view" name="dashboard-view" aria-describedby="view-hint">
+        <option value="ic-im">IC IM</option>
+        <option value="team-lead">Team Lead</option>
+        <option value="im-manager">IM Manager</option>
+      </select>
+    </div>
+    <p id="view-hint" class="sr-only">Loads the My Workload, Territory Overview, or Total Team Workload screen in the frame below.</p>
+  </header>
+
+  <div id="view-announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <main id="dashboard-main" class="frame-wrap" role="main" aria-label="Embedded dashboard view">
+    <iframe
+      id="frame-ic-im"
+      class="is-active"
+      title="My Workload — IC IM (index)"
+      data-src="index.html"
+    ></iframe>
+    <iframe
+      id="frame-team-lead"
+      title="Territory Overview — Team Lead (LeadView)"
+      data-src="LeadView.html"
+    ></iframe>
+    <iframe
+      id="frame-im-manager"
+      title="Total Team Workload — IM Manager (ManagerView)"
+      data-src="ManagerView.html"
+    ></iframe>
+  </main>
+
+  <script>
+    (function () {
+      const select = document.getElementById("dashboard-view");
+      const announce = document.getElementById("view-announcement");
+      const frames = {
+        "ic-im": document.getElementById("frame-ic-im"),
+        "team-lead": document.getElementById("frame-team-lead"),
+        "im-manager": document.getElementById("frame-im-manager"),
+      };
+      const labels = {
+        "ic-im": "Showing My Workload — IC IM.",
+        "team-lead": "Showing Territory Overview — Team Lead.",
+        "im-manager": "Showing Total Team Workload — IM Manager.",
+      };
+
+      function activate(key) {
+        Object.keys(frames).forEach(function (k) {
+          const el = frames[k];
+          if (k === key) {
+            el.classList.add("is-active");
+            if (!el.getAttribute("src")) {
+              el.setAttribute("src", el.getAttribute("data-src"));
+            }
+          } else {
+            el.classList.remove("is-active");
+          }
+        });
+        announce.textContent = labels[key] || "";
+      }
+
+      select.addEventListener("change", function () {
+        activate(select.value);
+      });
+
+      activate(select.value);
+    })();
+  </script>
+</body>
+</html>
