@@ -1,0 +1,9 @@
+/* Loaded by index.html, LeadView.html, and ManagerView.html when ?embed=1 */
+html.is-embedded .container > header,
+html.is-embedded .container > footer {
+  display: none;
+}
+html.is-embedded .container {
+  padding-top: 16px;
+  max-width: none;
+}
