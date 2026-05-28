@@ -134,6 +134,19 @@ header {
   letter-spacing: -0.02em;
 }
 
+/* Capacity % uses health bands (same as Lead roster), not summary card default green */
+.card-summary-capacity > .main-val.lead-cap-ok {
+  color: var(--psq-green-07);
+}
+
+.card-summary-capacity > .main-val.lead-cap-warn {
+  color: var(--psq-orange-07);
+}
+
+.card-summary-capacity > .main-val.lead-cap-critical {
+  color: #a94442;
+}
+
 .card .sub-val {
   font-size: 13px;
   font-weight: 500;
@@ -254,16 +267,19 @@ header {
 .im-card.im-card-cap-critical { --card-accent: #a94442; }
 
 #t-cap-pct.lead-cap-ok,
+#stat-cap-pct.lead-cap-ok,
 .lead-cap-ok {
   color: var(--psq-green-07);
 }
 
 #t-cap-pct.lead-cap-warn,
+#stat-cap-pct.lead-cap-warn,
 .lead-cap-warn {
   color: var(--psq-orange-07);
 }
 
 #t-cap-pct.lead-cap-critical,
+#stat-cap-pct.lead-cap-critical,
 .lead-cap-critical {
   color: #a94442;
 }

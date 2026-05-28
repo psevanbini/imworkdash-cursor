@@ -77,3 +77,82 @@ function formatIMRisksInline(yellow, red, pastDue) {
     pastDueHtml
   );
 }
+
+function imCapacityPct(im, mpcValues) {
+  var max = mpcValues[im.tier];
+  if (!max) return 0;
+  return Math.round(((im.dealPts + im.projPts) / max) * 100);
+}
+
+function leadCapacityPctColor(pct) {
+  if (pct >= 90) return "#a94442";
+  if (pct >= 80) return "#d49923";
+  return "#56bc3a";
+}
+
+function formatDealAssignIMOption(im, mpcValues) {
+  var pct = imCapacityPct(im, mpcValues);
+  var color = leadCapacityPctColor(pct);
+  return (
+    '<option style="color:' + color + '; font-weight:700;">' +
+    formatIMName(im) + " (" + pct + "%)</option>"
+  );
+}
+
+function imTierNumber(im) {
+  return parseInt(im.tier.replace(/\D/g, ""), 10);
+}
+
+/** T1: Med and Lg/Ent not available by tier. */
+function eligibilityMedDisabled(im) {
+  return imTierNumber(im) <= 1;
+}
+
+/** T1–T2: Lg/Ent not available by tier. */
+function eligibilityLgDisabled(im) {
+  return imTierNumber(im) <= 2;
+}
+
+function normalizeIMEligibility(im) {
+  if (eligibilityMedDisabled(im)) im.med = false;
+  if (eligibilityLgDisabled(im)) im.lg = false;
+}
+
+/** On rotation + segment training for deal size (Med / Lg/Ent). */
+function imEligibleForDealSize(im, dealSize) {
+  if (!im.onRotation) return false;
+  var tier = imTierNumber(im);
+  if (dealSize === "Small") return true;
+  if (dealSize === "Medium") return tier >= 2 && im.med;
+  if (dealSize === "Strategic" || dealSize === "Large" || dealSize === "Enterprise") {
+    return tier >= 3 && im.lg;
+  }
+  return false;
+}
+
+function dealAssignEmptyLabel(dealSize) {
+  if (dealSize === "Small") return "No eligible IMs (on rotation)";
+  if (dealSize === "Medium") return "No eligible IMs (on rotation + Med training)";
+  if (
+    dealSize === "Large" ||
+    dealSize === "Enterprise" ||
+    dealSize === "Strategic"
+  ) {
+    return "No eligible IMs (on rotation + Lg/Ent training)";
+  }
+  return "No eligible IMs for this deal size";
+}
+
+function dealAssignIMOptionsHtml(ims, mpcValues, dealSize) {
+  return ims
+    .filter(function (im) {
+      return imEligibleForDealSize(im, dealSize);
+    })
+    .sort(function (a, b) {
+      return imCapacityPct(a, mpcValues) - imCapacityPct(b, mpcValues);
+    })
+    .map(function (im) {
+      return formatDealAssignIMOption(im, mpcValues);
+    })
+    .join("");
+}

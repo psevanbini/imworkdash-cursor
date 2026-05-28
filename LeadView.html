@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="shared/embed.css">
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
+  <script src="shared/team-data.js"></script>
+  <script src="shared/view-sync.js"></script>
   <style>
     .logo img { height: 40px; width: 40px; }
     .modal-overlay.is-open { display: flex; }
@@ -55,13 +57,13 @@
 
   <div class="controls">
     <div class="control-group">
-      <button id="btn-list" class="btn-action active" onclick="switchLayout('list')">List View</button>
-      <button id="btn-card" class="btn-action" onclick="switchLayout('card')">Card View</button>
+      <button id="btn-list" class="btn-action active" onclick="LeadView.switchLayout('list')">List View</button>
+      <button id="btn-card" class="btn-action" onclick="LeadView.switchLayout('card')">Card View</button>
     </div>
     <div class="control-group">
       <span class="eyebrow" style="margin-right: 8px;">Group By:</span>
-      <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="setSort('tier')">Tier ↑↓</button>
-      <button id="sort-cap" class="btn-action btn-sort" onclick="setSort('cap')">% Cap ↑↓</button>
+      <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="LeadView.setSort('tier')">Tier ↑↓</button>
+      <button id="sort-cap" class="btn-action btn-sort" onclick="LeadView.setSort('cap')">% Cap ↑↓</button>
     </div>
   </div>
 
@@ -72,8 +74,8 @@
       <h3 id="modal-im-name" style="margin:0; font-size:14px; color:var(--ps-dark-green);">Edit Notes</h3>
       <textarea id="note-text"></textarea>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button class="btn-action" onclick="closeModal()">Cancel</button>
-        <button class="btn-action active" onclick="saveNote()">Save</button>
+        <button class="btn-action" onclick="LeadView.closeModal()">Cancel</button>
+        <button class="btn-action active" onclick="LeadView.saveNote()">Save</button>
       </div>
     </div>
   </div>
@@ -81,107 +83,6 @@
   <footer>© 2026 ParentSquare • Implementation Team Lead Dashboard</footer>
 </div>
 
-<script>
-const MPC_VALUES = { "T1": 70, "T2": 90, "T3": 120, "T4": 120, "T5": 90 };
-let currentLayout = 'list', currentSort = 'tier', sortDir = 'desc', editingIM = null;
-
-let territoryIMs = [
-  { name: "Alex R.", tier: "T4", dealPts: 95, projPts: 20, deals: 14, projects: 3, pastDue: 1, yellowRisk: 2, redRisk: 1 },
-  // Adjusted Jordan M. to "High" Category (75/90 = 83%)
-  { name: "Jordan M.", tier: "T2", dealPts: 65, projPts: 10, deals: 9, projects: 2, pastDue: 0, yellowRisk: 1, redRisk: 0 },
-  { name: "Casey S.", tier: "T3", dealPts: 45, projPts: 0, deals: 10, projects: 0, pastDue: 0, yellowRisk: 0, redRisk: 0 },
-  { name: "Morgan L.", tier: "T1", dealPts: 52, projPts: 15, deals: 11, projects: 4, pastDue: 2, yellowRisk: 2, redRisk: 1 },
-  { name: "Riley W.", tier: "T2", dealPts: 80, projPts: 5, deals: 13, projects: 1, pastDue: 0, yellowRisk: 2, redRisk: 0 },
-  { name: "Taylor B.", tier: "T3", dealPts: 95, projPts: 25, deals: 14, projects: 5, pastDue: 1, yellowRisk: 2, redRisk: 2 },
-  { name: "Quinn J.", tier: "T1", dealPts: 30, projPts: 5, deals: 8, projects: 1, pastDue: 0, yellowRisk: 0, redRisk: 0 },
-  { name: "Skyler P.", tier: "T5", dealPts: 40, projPts: 12, deals: 9, projects: 2, pastDue: 0, yellowRisk: 0, redRisk: 0 }
-];
-
-function updateTerritoryMetrics() {
-    let tdPts = 0, tpPts = 0, tMax = 0, yR = 0, rR = 0, spCount = 0, pdCount = 0;
-    territoryIMs.forEach(im => {
-        tdPts += im.dealPts; tpPts += im.projPts; tMax += MPC_VALUES[im.tier];
-        spCount += im.projects; pdCount += im.pastDue; yR += im.yellowRisk; rR += im.redRisk;
-    });
-    const tPts = tdPts + tpPts, cap = Math.round((tPts / tMax) * 100);
-    document.getElementById('t-im-count').innerText = territoryIMs.length;
-    document.getElementById('t-strat-proj').innerText = spCount;
-    document.getElementById('t-total-pts').innerText = tPts;
-    document.getElementById('t-max-pts').innerText = tMax;
-    document.getElementById('t-deal-pts').innerText = tdPts;
-    document.getElementById('t-proj-pts').innerText = tpPts;
-    const capEl = document.getElementById('t-cap-pct');
-    capEl.innerText = cap + '%';
-    capEl.className = 'main-val ' + leadCapacityPctClass(cap);
-    document.getElementById('t-fill-deals').style.width = (tdPts/tMax*100) + '%';
-    document.getElementById('t-fill-projects').style.width = (tpPts/tMax*100) + '%';
-    document.getElementById('t-risk-total').innerText = `${yR + rR} At-Risk Deals`;
-    document.getElementById('t-risk-breakdown').innerHTML = formatRiskBreakdown(yR, rR, 'Health Breakdown');
-    document.getElementById('t-past-due-proj').innerHTML = formatPastDueProjects(pdCount);
-}
-
-function renderContent() {
-    const display = document.getElementById('territory-display');
-    display.innerHTML = '';
-    const sorted = [...territoryIMs].sort((a,b) => {
-        let vA = currentSort === 'tier' ? parseInt(a.tier.slice(1)) : (a.dealPts + a.projPts)/MPC_VALUES[a.tier];
-        let vB = currentSort === 'tier' ? parseInt(b.tier.slice(1)) : (b.dealPts + b.projPts)/MPC_VALUES[b.tier];
-        return sortDir === 'desc' ? vB - vA : vA - vB;
-    });
-    let groups = {};
-    sorted.forEach(im => {
-        const pct = Math.round(((im.dealPts + im.projPts) / MPC_VALUES[im.tier]) * 100);
-        const key = currentSort === 'tier' ? `Tier ${im.tier.slice(1)}` : (pct >= 90 ? "Critical (90%+)" : (pct >= 80 ? "High (80-89%)" : "Stable (Under 80%)"));
-        if (!groups[key]) groups[key] = []; groups[key].push(im);
-    });
-
-    Object.keys(groups).forEach(key => {
-        const h = document.createElement('div');
-        h.className = groupHeaderClassForKey(key);
-        h.innerText = key;
-        display.appendChild(h);
-        if (currentLayout === 'list') {
-            const t = document.createElement('table');
-            t.innerHTML = `<thead><tr><th>IM Name</th><th>Deals (Pts)</th><th>Projs (Pts)</th><th>Total / Cap</th><th>% Cap</th><th>Risks (Y/R|P)</th><th>Notes</th></tr></thead><tbody id="b-${key.replace(/\s/g,'')}"></tbody>`;
-            display.appendChild(t); const b = t.querySelector('tbody');
-            groups[key].forEach(im => {
-                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
-                const capClass = leadCapacityPctClass(pct);
-                const n = localStorage.getItem('note_t_'+im.name) || '';
-                b.innerHTML += `<tr><td><strong>${formatIMName(im)}</strong></td><td>${im.deals} (${im.dealPts})</td><td>${im.projects} (${im.projPts})</td><td><strong>${tot}</strong> / ${m}</td><td><span class="${capClass}" style="font-weight:700;">${pct}%</span></td><td>${formatIMRisksCell(im.yellowRisk, im.redRisk, im.pastDue)}</td><td>${n.substring(0,12)}${n.length>12?'...':''} <span class="edit-btn" onclick="openModal('${im.name}')">✎</span></td></tr>`;
-            });
-        } else {
-            const grid = document.createElement('div'); grid.className = 'im-grid'; display.appendChild(grid);
-            groups[key].forEach(im => {
-                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
-                const capClass = leadCapacityPctClass(pct);
-                const n = localStorage.getItem('note_t_'+im.name) || 'None';
-                grid.innerHTML += `<div class="${imCardClassList(im)}">
-                    <div style="display:flex; justify-content:space-between;"><h3>${formatIMName(im)}</h3><span class="${capClass}" style="font-weight:700; font-size:12px;">${pct}%</span></div>
-                    <div class="stats">Pts: <b>${tot}</b>/${m} | Deals: ${im.deals} | Projs: ${im.projects}<br>Risks: ${formatIMRisksInline(im.yellowRisk, im.redRisk, im.pastDue)}</div>
-                    <div class="summary-cap-bar" style="height:6px;"><div style="width:${(im.dealPts/m)*100}%; background:var(--ps-green);"></div><div style="width:${(im.projPts/m)*100}%; background:var(--ps-blue);"></div></div>
-                    <div style="font-size:10px; color:#999; border-top:1px solid #eee; padding-top:5px; height:30px; overflow:hidden;">"${n}" <span class="edit-btn" onclick="openModal('${im.name}')">✎</span></div>
-                </div>`;
-            });
-        }
-    });
-}
-
-function setSort(t) {
-    if (currentSort === t) sortDir = sortDir === 'desc' ? 'asc' : 'desc'; else { currentSort = t; sortDir = 'desc'; }
-    document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active-sort'));
-    document.getElementById('sort-'+t).classList.add('active-sort'); renderContent();
-}
-
-function switchLayout(l) { 
-    currentLayout = l; document.getElementById('btn-list').classList.toggle('active', l==='list');
-    document.getElementById('btn-card').classList.toggle('active', l==='card'); renderContent(); 
-}
-
-function openModal(name) { editingIM = name; document.getElementById('modal-im-name').innerText = `Notes for ${name}`; document.getElementById('note-text').value = localStorage.getItem('note_t_'+name) || ''; document.getElementById('note-modal').style.display = 'flex'; }
-function closeModal() { document.getElementById('note-modal').style.display = 'none'; }
-function saveNote() { localStorage.setItem('note_t_'+editingIM, document.getElementById('note-text').value); closeModal(); renderContent(); }
-updateTerritoryMetrics(); renderContent();
-</script>
+<script src="shared/lead-view.js"></script>
 </body>
 </html>

@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="shared/embed.css">
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
+  <script src="shared/team-data.js"></script>
+  <script src="shared/view-sync.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
 </head>
 <body>
@@ -51,7 +53,7 @@
     </div>
   </div>
 
-  <div class="sub-tabs">
+  <div class="sub-tabs main-sub-tabs">
     <div id="tab-roster" class="sub-tab active" onclick="switchSubTab('roster')">Full Team Roster</div>
     <div id="tab-assignment" class="sub-tab" onclick="switchSubTab('assignment')">
         Deal Assignment Review <span id="assignment-badge" class="tab-badge">0</span>
@@ -85,27 +87,63 @@
   </div>
 
   <div id="view-assignment" class="tab-content" style="display:none;">
-    <div class="section-header">New Deal Queue</div>
-    <div id="deal-queue-container"></div>
-
-    <div class="section-header bordered">Rotation Removal Alerts</div>
-    <div id="alerts-container"></div>
-
-    <div class="section-header">Manual Rotation Removal</div>
-    <div class="search-panel">
-        <label class="eyebrow" style="text-transform:none; letter-spacing:0;">Select IM:</label>
-        <select id="manual-im-select" style="padding:8px; font-size:12px; width:250px; border:1px solid var(--psq-border); border-radius:var(--radius-sm); font-family:var(--font-body);"></select>
-        <button class="btn-action active" onclick="triggerManualRemoval()">Remove from Rotation</button>
+    <div class="assignment-sub-tabs sub-tabs">
+      <div id="assignment-tab-queue" class="sub-tab active" onclick="switchAssignmentSubTab('queue')">New Deal Queue</div>
+      <div id="assignment-tab-rotation" class="sub-tab" onclick="switchAssignmentSubTab('rotation')">Rotation Removal Alerts</div>
+      <div id="assignment-tab-eligibility" class="sub-tab" onclick="switchAssignmentSubTab('eligibility')">IM Account Eligibility</div>
     </div>
 
-    <div class="section-header">IM Account Eligibility</div>
-    <div id="eligibility-container"></div>
+    <div id="assignment-view-queue" class="assignment-tab-panel">
+      <div id="deal-queue-container"></div>
+    </div>
+
+    <div id="assignment-view-rotation" class="assignment-tab-panel" style="display:none;">
+      <div class="section-header">Rotation Removal Alerts</div>
+      <div id="alerts-container"></div>
+
+      <div class="section-header">Manual Rotation Removal</div>
+      <div class="search-panel rotation-manual-panel">
+        <label class="rotation-select-label" for="manual-im-select">Select IM</label>
+        <select id="manual-im-select" class="rotation-im-select"></select>
+        <button type="button" class="btn-action active rotation-remove-btn" onclick="openRotationRemovalModal()">Remove from Rotation</button>
+      </div>
+    </div>
+
+    <div id="assignment-view-eligibility" class="assignment-tab-panel" style="display:none;">
+      <div id="eligibility-container"></div>
+    </div>
   </div>
 
   <div id="view-reporting" class="tab-content" style="display:none;">
     <div class="panel-muted">
       <h2>Team Trend Reporting</h2>
       <p>Quarterly Capacity Trend Visualization Placeholder.</p>
+    </div>
+  </div>
+
+  <div id="rotation-removal-modal" class="modal-overlay">
+    <div class="modal rotation-removal-modal">
+      <h3 style="margin:0 0 8px; font-size:14px; color:var(--psq-green-dark);">Remove from Rotation</h3>
+      <p id="rotation-modal-im-label" style="margin:0 0 14px; font-size:12px; color:var(--psq-muted);"></p>
+      <div class="rotation-reason-list">
+        <label class="rotation-reason-option"><input type="radio" name="rotation-reason" value="Illness" onchange="toggleRotationOtherNotes()"> Illness</label>
+        <label class="rotation-reason-option"><input type="radio" name="rotation-reason" value="Vacation" onchange="toggleRotationOtherNotes()"> Vacation</label>
+        <label class="rotation-reason-option"><input type="radio" name="rotation-reason" value="Bereavement" onchange="toggleRotationOtherNotes()"> Bereavement</label>
+        <label class="rotation-reason-option"><input type="radio" name="rotation-reason" value="IM Request/Burnout" onchange="toggleRotationOtherNotes()"> IM Request/Burnout</label>
+        <label class="rotation-reason-option"><input type="radio" name="rotation-reason" value="Other" onchange="toggleRotationOtherNotes()"> Other</label>
+      </div>
+      <div id="rotation-other-notes-wrap" class="rotation-other-notes" style="display:none;">
+        <label class="eyebrow" for="rotation-other-text" style="text-transform:none; letter-spacing:0; margin-bottom:6px; display:block;">Notes (required)</label>
+        <textarea id="rotation-other-text" placeholder="Describe the reason for removal…"></textarea>
+      </div>
+      <div class="rotation-modal-return">
+        <label class="rotation-return-label" for="rotation-modal-return-date">Scheduled return to rotation (optional)</label>
+        <input type="date" id="rotation-modal-return-date" class="rotation-return-date">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button type="button" class="btn-action" onclick="closeRotationRemovalModal()">Cancel</button>
+        <button type="button" class="btn-action active" onclick="confirmRotationRemoval()">Remove from Rotation</button>
+      </div>
     </div>
   </div>
 

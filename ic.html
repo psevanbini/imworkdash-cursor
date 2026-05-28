@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="shared/embed.css">
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
+  <script src="shared/team-data.js"></script>
+  <script src="shared/ic-sync.js"></script>
+  <script src="shared/view-sync.js"></script>
   <style>
     .card .main-val { font-size: 24px; }
     .summary-cap-bar { height: 10px; }
@@ -30,8 +33,8 @@
   </header>
 
   <div class="tabs">
-    <div id="tab-my-workload" class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="switchICTab('workload')">My Workload</div>
-    <div id="tab-my-projects" class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchICTab('projects')">My Projects</div>
+    <div id="tab-my-workload" class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="ICView.switchICTab('workload')">My Workload</div>
+    <div id="tab-my-projects" class="tab" role="tab" aria-selected="false" tabindex="0" onclick="ICView.switchICTab('projects')">My Projects</div>
   </div>
 
   <div class="summary">
@@ -90,159 +93,6 @@
   <footer>© 2026 ParentSquare • Implementation Manager Dashboard</footer>
 </div>
 
-<script>
-const MPC_VALUES = { "T1": 70, "T2": 90, "T3": 120, "T4": 120, "T5": 90 };
-const SIS_PTS = { "PowerSchool": 3, "Infinite Campus": 2, "Aeries": 2, "Skyward SFTP": 2, "Clever": 2, "RenWeb/FACTS": 1 };
-const SIZE_PTS = { "Strategic": 4, "Large": 2, "Medium": 3, "Small": 1 };
-const HEALTH_PTS = { "green": 0, "yellow": 1, "red": 2 };
-const STAGES = ["Inbound", "Kickoff", "Setup", "Feature Enablement", "Platform Ready", "Monitor", "End of Implementation", "On Hold", "Stalled"];
-const ADJ_OPTIONS = ["Extended Launch", "Proof of Concept", "Pilots", "DSAs/DUAs/DPAs", "DOEs", "New Hire"];
-
-const ROLE_PTS = { "Lead": 3, "Contributor": 1 };
-const TYPE_PTS = { "Internal": 1, "Cross-Collaboration": 2 };
-const COMP_PTS = { "Easy": 1, "Medium": 2, "Hard": 3 };
-
-let myDeals = Array.from({length: 12}, (_, i) => ({
-    id: i, stage: STAGES[i % STAGES.length], name: `Customer ${String.fromCharCode(65+i)}`, 
-    size: i % 3 === 0 ? "Strategic" : (i % 3 === 1 ? "Medium" : "Large"), 
-    sis: i % 2 === 0 ? "PowerSchool" : "Infinite Campus", 
-    health: i % 4 === 0 ? "yellow" : (i === 11 ? "red" : "green"), 
-    adj: JSON.parse(localStorage.getItem(`adj_my_deal_${i}`)) || []
-}));
-
-let myProjects = [
-    { name: "Resource Library Audit", role: "Lead", type: "Internal", complexity: "Medium", endDate: "03/10/2026" },
-    { name: "Support API Sync Project", role: "Contributor", type: "Cross-Collaboration", complexity: "Hard", endDate: "04/05/2026" }
-];
-
-function calculateProjectPoints(p) {
-    return ROLE_PTS[p.role] + TYPE_PTS[p.type] + COMP_PTS[p.complexity];
-}
-
-function switchICTab(which) {
-    const isWorkload = which === 'workload';
-    document.getElementById('tab-my-workload').classList.toggle('active', isWorkload);
-    document.getElementById('tab-my-projects').classList.toggle('active', !isWorkload);
-    document.getElementById('tab-my-workload').setAttribute('aria-selected', isWorkload ? 'true' : 'false');
-    document.getElementById('tab-my-projects').setAttribute('aria-selected', isWorkload ? 'false' : 'true');
-    document.getElementById('view-my-workload').classList.toggle('active', isWorkload);
-    document.getElementById('view-my-projects').classList.toggle('active', !isWorkload);
-}
-
-function updateMetrics() {
-    let dealPts = 0, yellow = 0, red = 0;
-    myDeals.forEach(d => {
-        dealPts += (SIZE_PTS[d.size] + SIS_PTS[d.sis] + HEALTH_PTS[d.health] + d.adj.length);
-        if (d.health === 'yellow') yellow++;
-        if (d.health === 'red') red++;
-    });
-
-    let projPts = 0, pastDue = 0;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    myProjects.forEach(p => {
-        projPts += calculateProjectPoints(p);
-        const [m, d, y] = p.endDate.split('/');
-        if (new Date(y, m-1, d) < today) pastDue++;
-    });
-
-    const total = dealPts + projPts;
-    const capPct = Math.round((total / 120) * 100);
-
-    document.getElementById('stat-deals-count').innerText = myDeals.length;
-    document.getElementById('stat-projects-count').innerText = myProjects.length;
-    document.getElementById('stat-total-pts').innerText = total;
-    document.getElementById('stat-deal-pts').innerText = dealPts;
-    document.getElementById('stat-proj-pts').innerText = projPts;
-
-    const capLabel = document.getElementById('stat-cap-pct');
-    capLabel.innerText = capPct + '%';
-    capLabel.className = "main-val";
-
-    document.getElementById('fill-deals').style.width = (dealPts / 120 * 100) + '%';
-    document.getElementById('fill-projects').style.width = (projPts / 120 * 100) + '%';
-
-    document.getElementById('stat-risk-total').innerText = `${yellow + red} At-Risk Deals`;
-    document.getElementById('stat-risk-breakdown').innerHTML = formatRiskBreakdown(yellow, red, 'Breakdown');
-    document.getElementById('stat-past-due-proj').innerHTML = formatPastDueProjects(pastDue);
-}
-
-function renderMyBook() {
-    const body = document.getElementById('my-deals-body');
-    body.innerHTML = '';
-    myDeals.sort((a, b) => STAGES.indexOf(a.stage) - STAGES.indexOf(b.stage));
-    let currentStage = "";
-
-    myDeals.forEach(deal => {
-        if (deal.stage !== currentStage) {
-            body.innerHTML += `<tr><td colspan="7" class="stage-group-header">${deal.stage}</td></tr>`;
-            currentStage = deal.stage;
-        }
-        const pts = (SIZE_PTS[deal.size] + SIS_PTS[deal.sis] + HEALTH_PTS[deal.health] + deal.adj.length);
-        body.innerHTML += `<tr>
-            <td>${deal.stage}</td>
-            <td><strong>${deal.name}</strong></td>
-            <td>${deal.size} (${SIZE_PTS[deal.size]})</td>
-            <td>${deal.sis} (${SIS_PTS[deal.sis]})</td>
-            <td><span class="pill ${deal.health}">${deal.health} (${HEALTH_PTS[deal.health]})</span></td>
-            <td>
-                <div class="adj-wrapper">
-                    <div class="adj-btn" onclick="toggleAdj(${deal.id})">Manage ▼</div>
-                    <div class="adj-dropdown" id="adj-menu-${deal.id}">
-                        ${ADJ_OPTIONS.map(opt => `<label style="display:block; margin-bottom:5px;"><input type="checkbox" ${deal.adj.includes(opt)?'checked':''} onchange="updateAdj(${deal.id},'${opt}')"> ${opt} (+1)</label>`).join('')}
-                    </div>
-                    <div class="adj-display">${deal.adj.map(a => `<span>${a} (+1)</span>`).join('')}</div>
-                </div>
-            </td>
-            <td><strong>${pts}</strong></td>
-        </tr>`;
-    });
-}
-
-function renderProjects() {
-    const body = document.getElementById('my-projects-body');
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const twoWeeks = new Date();
-    twoWeeks.setDate(today.getDate() + 14);
-
-    body.innerHTML = myProjects.map(p => {
-        const [m, d, y] = p.endDate.split('/');
-        const end = new Date(y, m-1, d);
-        let dateClass = "green";
-        if (end < today) dateClass = "red";
-        else if (end <= twoWeeks) dateClass = "yellow";
-
-        return `<tr>
-            <td><strong>${p.name}</strong></td>
-            <td>${p.role} (${ROLE_PTS[p.role]})</td>
-            <td>${p.type} (${TYPE_PTS[p.type]})</td>
-            <td>${p.complexity} (${COMP_PTS[p.complexity]})</td>
-            <td><span class="pill ${dateClass}">${p.endDate}</span></td>
-            <td><strong>${calculateProjectPoints(p)}</strong></td>
-        </tr>`;
-    }).join('');
-}
-
-function toggleAdj(id) { 
-    document.querySelectorAll('.adj-dropdown').forEach(d => {
-        if (d.id !== `adj-menu-${id}`) d.classList.remove('active');
-    });
-    document.getElementById(`adj-menu-${id}`).classList.toggle('active'); 
-}
-
-function updateAdj(id, opt) {
-    const d = myDeals.find(x => x.id === id);
-    const idx = d.adj.indexOf(opt);
-    idx > -1 ? d.adj.splice(idx, 1) : d.adj.push(opt);
-    localStorage.setItem(`adj_my_deal_${id}`, JSON.stringify(d.adj));
-    renderMyBook(); 
-    updateMetrics();
-}
-
-window.onclick = e => { if (!e.target.closest('.adj-wrapper')) document.querySelectorAll('.adj-dropdown').forEach(d => d.classList.remove('active')); };
-
-updateMetrics(); renderMyBook(); renderProjects();
-</script>
+<script src="shared/ic-view.js"></script>
 </body>
 </html>
