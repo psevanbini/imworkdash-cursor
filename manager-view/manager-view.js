@@ -1,7 +1,7 @@
 const MPC_VALUES = TeamData.MPC_VALUES;
 const SIZE_PTS = { "Strategic": 4, "Large": 2, "Enterprise": 2, "Medium": 3, "Small": 1 };
 const SIS_PTS = { "PowerSchool": 3, "Infinite Campus": 2, "Aeries": 2, "Skyward SFTP": 2, "Clever": 2, "RenWeb/FACTS": 1 };
-const ADJ_OPTIONS = ["Extended Launch", "Proof of Concept", "Pilots", "DSAs/DUAs/DPAs", "DOEs", "New Hire"];
+const ADJ_OPTIONS = ["Extended Launch", "Proof of Concept", "Pilots", "DSAs/DUAs/DPAs", "DOEs/RICs/BOCES", "New Hire"];
 
 let currentLayout = 'list', currentSort = 'tier', currentTZ = 'all', sortDir = 'desc', eligSortDir = 'desc', editingIM = null, currentAssignmentSubTab = 'queue';
 
@@ -22,6 +22,7 @@ function reloadFromSharedStore() {
   normalizeAllEligibility();
   updateMetrics();
   renderContent(true);
+  renderReportingIfActive();
 }
 
 function switchSubTab(tab) {
@@ -30,6 +31,7 @@ function switchSubTab(tab) {
     document.getElementById('view-' + tab).style.display = 'block';
     document.getElementById('tab-' + tab).classList.add('active');
     if (tab === 'assignment') switchAssignmentSubTab(currentAssignmentSubTab);
+    if (tab === 'reporting') renderReportingIfActive();
     renderContent();
 }
 
@@ -41,9 +43,14 @@ function switchAssignmentSubTab(tab) {
     document.getElementById('assignment-tab-' + tab).classList.add('active');
 }
 
+function filterByRegionalTz(items) {
+    return currentTZ === 'all' ? items : items.filter(function (item) { return item.tz === currentTZ; });
+}
+
 function updateBadge() {
-    const alerts = teamData.filter(im => !im.onRotation).length;
-    const total = dealQueue.length + alerts;
+    const alerts = filterByRegionalTz(teamData).filter(im => !im.onRotation).length;
+    const queueCount = filterByRegionalTz(dealQueue).length;
+    const total = queueCount + alerts;
     const badge = document.getElementById('assignment-badge');
     badge.innerText = total;
     badge.style.display = total > 0 ? 'inline-block' : 'none';
@@ -54,6 +61,17 @@ function setTZFilter(tz, btn) {
     document.querySelectorAll('.filter-tz').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     updateMetrics(); renderContent();
+    renderReportingIfActive();
+}
+
+function getReportingContext() {
+    return { team: teamData, tz: currentTZ };
+}
+
+function renderReportingIfActive() {
+    if (document.getElementById('tab-reporting').classList.contains('active')) {
+        ManagerReporting.render(getReportingContext());
+    }
 }
 
 function businessDaysSince(dateStr) {
@@ -243,11 +261,14 @@ function eligibilityCheckboxHtml(im, field) {
 }
 
 function renderAssignment() {
-    const filtered = currentTZ === 'all' ? teamData : teamData.filter(im => im.tz === currentTZ);
-    
+    const filtered = filterByRegionalTz(teamData);
+    const filteredDeals = filterByRegionalTz(dealQueue);
+
     // New Deal Queue
     const qContainer = document.getElementById('deal-queue-container');
-    qContainer.innerHTML = dealQueue.map(deal => {
+    qContainer.innerHTML = filteredDeals.length === 0
+        ? '<p style="font-size:12px; color:var(--psq-muted); margin:0;">No deals in queue for this region.</p>'
+        : filteredDeals.map(deal => {
         const base = (SIZE_PTS[deal.size] || 0) + (SIS_PTS[deal.sis] || 0);
         const total = base + deal.adj.length;
         const assignOptions = dealAssignIMOptionsHtml(filtered, MPC_VALUES, deal.size);
@@ -424,5 +445,7 @@ initManagerData();
 normalizeAllEligibility();
 updateMetrics();
 renderContent();
+
+ManagerReporting.init(getReportingContext);
 
 IMWorkdashViewSync.onTeamDataUpdated(reloadFromSharedStore);

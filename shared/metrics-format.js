@@ -26,6 +26,17 @@ function formatIMName(im) {
   return tier ? im.name + " (" + tier + ")" : im.name;
 }
 
+/** First name, last initial, tier — e.g. Jordan M. (T3) */
+function formatIMShortLabel(im) {
+  if (typeof im === "string") return im;
+  var parts = im.name.trim().split(/\s+/);
+  var first = parts[0] || im.name;
+  var lastInitial = parts.length > 1 ? parts[parts.length - 1].charAt(0) + "." : "";
+  var tier = im.tier || "";
+  var label = lastInitial ? first + " " + lastInitial : first;
+  return tier ? label + " (" + tier + ")" : label;
+}
+
 function groupHeaderClassForKey(key, baseClass) {
   baseClass = baseClass || "group-header";
   var tier = tierNumberFromGroupKey(key);

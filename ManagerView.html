@@ -13,6 +13,9 @@
   <script src="shared/team-data.js"></script>
   <script src="shared/view-sync.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
+  <link rel="stylesheet" href="manager-view/reporting.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="shared/fiscal-calendar.js"></script>
 </head>
 <body>
 
@@ -115,10 +118,41 @@
   </div>
 
   <div id="view-reporting" class="tab-content" style="display:none;">
-    <div class="panel-muted">
-      <h2>Team Trend Reporting</h2>
-      <p>Quarterly Capacity Trend Visualization Placeholder.</p>
+    <div class="reporting-toolbar">
+      <div class="reporting-toolbar-group reporting-toolbar-group--modes">
+        <span class="eyebrow">Date Range:</span>
+        <label class="reporting-date-mode"><input type="radio" name="report-date-mode" value="quarter" checked> Fiscal Quarter</label>
+        <label class="reporting-date-mode"><input type="radio" name="report-date-mode" value="fiscal-year"> Full Fiscal Year</label>
+        <label class="reporting-date-mode"><input type="radio" name="report-date-mode" value="calendar"> Calendar Dates</label>
+      </div>
+      <div id="report-panel-quarter" class="reporting-toolbar-group reporting-date-panel">
+        <label for="report-quarter-select">Quarter</label>
+        <select id="report-quarter-select"></select>
+      </div>
+      <div id="report-panel-fiscal-year" class="reporting-toolbar-group reporting-date-panel" style="display:none;">
+        <label for="report-fiscal-year-select">Fiscal Year</label>
+        <select id="report-fiscal-year-select"></select>
+      </div>
+      <div id="report-panel-calendar" class="reporting-toolbar-group reporting-date-panel" style="display:none;">
+        <label for="report-date-from">From</label>
+        <input type="date" id="report-date-from">
+        <label for="report-date-to">To</label>
+        <input type="date" id="report-date-to">
+      </div>
+      <button type="button" id="report-apply-range" class="btn-action active">Apply</button>
+      <div class="reporting-toolbar-group reporting-toolbar-group--charts">
+        <button type="button" id="report-chart-visibility-toggle" class="btn-action">Show / Hide Charts</button>
+        <button type="button" id="report-expand-all" class="btn-action">Expand All</button>
+        <button type="button" id="report-collapse-all" class="btn-action">Collapse All</button>
+      </div>
     </div>
+    <div id="report-chart-visibility-panel" class="report-chart-visibility-panel" style="display:none;">
+      <p class="report-visibility-hint">Uncheck a chart to hide it from the dashboard. Use ▼ on each chart header to collapse without hiding.</p>
+      <div id="report-chart-visibility-list" class="report-chart-visibility-list"></div>
+    </div>
+    <p class="reporting-hint">Charts reflect the <strong>Regional View</strong> filter above (regional comparison always shows all territories). Drag the ⠿ handle to reorder; use ▼ to collapse or the panel above to show/hide charts.</p>
+    <div id="reporting-meta" class="reporting-meta"></div>
+    <div id="reporting-dashboard" class="reporting-dashboard"></div>
   </div>
 
   <div id="rotation-removal-modal" class="modal-overlay">
@@ -161,6 +195,8 @@
   <footer>© 2026 ParentSquare • Total Team Workload</footer>
 </div>
 
+  <script src="manager-view/reporting-data.js"></script>
+  <script src="manager-view/reporting.js"></script>
   <script src="manager-view/manager-view.js"></script>
 
 </body>

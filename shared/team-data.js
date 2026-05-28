@@ -37,7 +37,9 @@ var TeamData = (function () {
   ];
 
   var DEFAULT_DEAL_QUEUE = [
-    { id: 901, name: "Mountain View USD", size: "Large", sis: "Infinite Campus", tz: "PST", adj: [] }
+    { id: 901, name: "Mountain View USD", size: "Large", sis: "Infinite Campus", tz: "PST", adj: [] },
+    { id: 902, name: "Riverside Unified SD", size: "Medium", sis: "PowerSchool", tz: "EST", adj: [] },
+    { id: 903, name: "Lake County Schools", size: "Enterprise", sis: "Aeries", tz: "CST", adj: [] }
   ];
 
   function cloneRoster() {

@@ -2,7 +2,7 @@
 (function () {
   var ADJ_OPTIONS = [
     "Extended Launch", "Proof of Concept", "Pilots",
-    "DSAs/DUAs/DPAs", "DOEs", "New Hire"
+    "DSAs/DUAs/DPAs", "DOEs/RICs/BOCES", "New Hire"
   ];
 
   var roster = [];
