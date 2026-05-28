@@ -4,9 +4,12 @@
   <meta charset="UTF-8" />
   <title>ParentSquare - Total Team Workload</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/brand.css">
+  <link rel="stylesheet" href="shared/dashboard.css">
   <link rel="stylesheet" href="shared/embed.css">
   <script src="shared/embed.js"></script>
+  <script src="shared/metrics-format.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
 </head>
 <body>
@@ -20,17 +23,18 @@
   </header>
 
   <div class="summary">
-    <div class="card">
+    <div class="card card-summary-deals">
         <div class="main-val"><span id="t-im-count">0</span> Total IMs</div>
         <div class="sub-val"><span id="t-deal-count">0</span> Implementation Deals</div>
         <div class="sub-val" style="margin-top:0;"><span id="t-strat-proj">0</span> Strategic Projects</div>
     </div>
-    <div class="card">
-        <div class="main-val"><span id="t-total-pts">0</span> / <span id="t-max-pts">0</span> Total Points</div>
+    <div class="card card-summary-points">
+        <div class="main-val"><span id="t-total-pts">0</span> / <span id="t-max-pts">0</span></div>
+        <div class="label" style="margin-top: 0; margin-bottom: 8px;">Total Points</div>
         <div class="sub-val"><span id="t-deal-pts">0</span> Deal Points</div>
-        <div class="sub-val" style="margin-top:0;"><span id="t-proj-pts">0</span> Project Points</div>
+        <div class="sub-val" style="margin-top: 0;"><span id="t-proj-pts">0</span> Project Points</div>
     </div>
-    <div class="card">
+    <div class="card card-summary-capacity">
         <div id="t-cap-pct" class="main-val">0%</div>
         <div class="summary-cap-bar">
             <div id="t-fill-deals" class="cap-fill-deals"></div>
@@ -38,11 +42,11 @@
         </div>
         <div class="label">Total Team Capacity</div>
     </div>
-    <div class="card">
-        <div style="background-color: var(--ps-light-red); padding: 4px 8px; border-radius: 4px; display: inline-block; width: fit-content;">
-            <div id="t-risk-total" class="main-val" style="font-size: 18px;">0 At-Risk Deals</div>
+    <div class="card card-summary-risk">
+        <div class="risk-highlight">
+            <div id="t-risk-total" class="main-val" style="font-size: 20px;">0 At-Risk Deals</div>
         </div>
-        <div id="t-risk-breakdown" class="sub-val" style="border-top: none; color: var(--ps-dark-gray);">0Y / 0R Health Breakdown</div>
+        <div id="t-risk-breakdown" class="sub-val">0Y / 0R Health Breakdown</div>
         <div id="t-past-due-proj" class="sub-val">0 Past Due Projects</div>
     </div>
   </div>
@@ -55,9 +59,9 @@
     <div id="tab-reporting" class="sub-tab" onclick="switchSubTab('reporting')">Reporting</div>
   </div>
 
-  <div class="controls" style="margin-bottom: 25px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+  <div class="controls filter-bar">
     <div class="control-group">
-      <span style="font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase;">Regional View:</span>
+      <span class="eyebrow">Regional View:</span>
       <button class="btn-action filter-tz active" onclick="setTZFilter('all', this)">All Regions</button>
       <button class="btn-action filter-tz" onclick="setTZFilter('EST', this)">EST</button>
       <button class="btn-action filter-tz" onclick="setTZFilter('CST', this)">CST</button>
@@ -72,6 +76,7 @@
         <button id="btn-card" class="btn-action" onclick="switchLayout('card')">Card View</button>
       </div>
       <div class="control-group">
+        <span class="eyebrow" style="margin-right: 8px;">Group By:</span>
         <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="setSort('tier')">Tier ↑↓</button>
         <button id="sort-cap" class="btn-action btn-sort" onclick="setSort('cap')">% Cap ↑↓</button>
       </div>
@@ -83,13 +88,13 @@
     <div class="section-header">New Deal Queue</div>
     <div id="deal-queue-container"></div>
 
-    <div class="section-header">Rotation Removal Alerts</div>
+    <div class="section-header bordered">Rotation Removal Alerts</div>
     <div id="alerts-container"></div>
 
     <div class="section-header">Manual Rotation Removal</div>
-    <div style="background:white; padding:20px; border-radius:8px; border:1px solid #ddd; display:flex; gap:15px; align-items:center; margin-bottom: 30px;">
-        <label style="font-size:12px; font-weight:700;">Select IM:</label>
-        <select id="manual-im-select" style="padding:6px; font-size:12px; width: 250px;"></select>
+    <div class="search-panel">
+        <label class="eyebrow" style="text-transform:none; letter-spacing:0;">Select IM:</label>
+        <select id="manual-im-select" style="padding:8px; font-size:12px; width:250px; border:1px solid var(--psq-border); border-radius:var(--radius-sm); font-family:var(--font-body);"></select>
         <button class="btn-action active" onclick="triggerManualRemoval()">Remove from Rotation</button>
     </div>
 
@@ -98,9 +103,20 @@
   </div>
 
   <div id="view-reporting" class="tab-content" style="display:none;">
-    <div style="padding:60px; border:2px dashed #ccc; border-radius:8px; text-align:center; background:white;">
-      <h2 style="color:#aaa;">Team Trend Reporting</h2>
-      <p style="color:#888;">Quarterly Capacity Trend Visualization Placeholder.</p>
+    <div class="panel-muted">
+      <h2>Team Trend Reporting</h2>
+      <p>Quarterly Capacity Trend Visualization Placeholder.</p>
+    </div>
+  </div>
+
+  <div id="note-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="modal-im-name" style="margin:0; font-size:14px; color:var(--psq-green-dark);">Edit Notes</h3>
+      <textarea id="note-text"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn-action" onclick="closeNoteModal()">Cancel</button>
+        <button class="btn-action active" onclick="saveNote()">Save</button>
+      </div>
     </div>
   </div>
 

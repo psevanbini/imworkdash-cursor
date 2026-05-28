@@ -4,136 +4,11 @@
   <meta charset="UTF-8" />
   <title>ParentSquare — IM Workload Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ps-green: #85ad33;
-      --ps-dark-green: #618025;
-      --ps-blue: #7bbaf0;
-      --ps-light-gray: #f7f8f8;
-      --ps-dark-gray: #444444;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: "Montserrat", Arial, sans-serif;
-      background: var(--ps-light-gray);
-      color: var(--ps-dark-gray);
-    }
-    .skip-link {
-      position: absolute;
-      left: -9999px;
-      top: 0;
-      z-index: 10000;
-      padding: 12px 16px;
-      background: var(--ps-dark-green);
-      color: #fff;
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .skip-link:focus {
-      left: 12px;
-      top: 12px;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-    .chrome {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      min-height: 72px;
-      padding: 14px 24px;
-      background: #fff;
-      border-bottom: 3px solid var(--ps-green);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .chrome-brand {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex: 1 1 240px;
-      min-width: 0;
-    }
-    .chrome-brand img {
-      height: 45px;
-      width: auto;
-      flex-shrink: 0;
-    }
-    .chrome-title {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--ps-green);
-      line-height: 1.2;
-    }
-    .chrome-sub {
-      margin: 4px 0 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #666;
-    }
-    .chrome-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-    .chrome-controls label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .chrome-controls select {
-      min-width: 220px;
-      padding: 9px 12px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--ps-dark-gray);
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-      cursor: pointer;
-    }
-    .chrome-controls select:focus {
-      outline: 2px solid var(--ps-blue);
-      outline-offset: 2px;
-    }
-    .frame-wrap {
-      height: calc(100vh - 72px);
-      min-height: 400px;
-      position: relative;
-      background: var(--ps-light-gray);
-    }
-    .frame-wrap iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      display: none;
-      background: var(--ps-light-gray);
-    }
-    .frame-wrap iframe.is-active {
-      display: block;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/brand.css">
+  <link rel="stylesheet" href="shared/shell.css">
 </head>
-<body>
+<body class="shell">
   <a class="skip-link" href="#dashboard-main">Skip to dashboard content</a>
 
   <header class="chrome" role="banner">
@@ -194,8 +69,8 @@
           announce: "Showing Individual Contributor view — My Workload.",
         },
         lead: {
-          subtitle: "EST Regional Workload Categorization",
-          announce: "Showing Team Lead view — Territory Overview.",
+          subtitle: "EST Regional Workload",
+          announce: "Showing Team Lead view — Implementation Team Lead Dashboard.",
         },
         manager: {
           subtitle: "Total Team Workload",

@@ -3,7 +3,7 @@ const SIZE_PTS = { "Strategic": 4, "Large": 2, "Medium": 3, "Small": 1 };
 const SIS_PTS = { "PowerSchool": 3, "Infinite Campus": 2, "Aeries": 2, "Skyward SFTP": 2, "Clever": 2, "RenWeb/FACTS": 1 };
 const ADJ_OPTIONS = ["Extended Launch", "Proof of Concept", "Pilots", "DSAs/DUAs/DPAs", "DOEs", "New Hire"];
 
-let currentLayout = 'list', currentSort = 'tier', currentTZ = 'all', sortDir = 'desc', eligSortDir = 'desc';
+let currentLayout = 'list', currentSort = 'tier', currentTZ = 'all', sortDir = 'desc', eligSortDir = 'desc', editingIM = null;
 
 let teamData = [
   { name: "Alex Rivers", tz: "EST", tier: "T4", dealPts: 65, projPts: 15, deals: 10, projects: 2, pd: 0, y: 1, r: 0, velocity: 2, med: true, lg: true, onRotation: true, reason: "" },
@@ -87,12 +87,12 @@ function renderAssignment() {
         const base = (SIZE_PTS[deal.size] || 0) + (SIS_PTS[deal.sis] || 0);
         const total = base + deal.adj.length;
         return `<div class="review-card"><div style="display:flex; justify-content:space-between;">
-            <div><h4>${deal.name} (${deal.tz})</h4><p style="font-size:11px; color:#666;">Base: ${deal.size} (${SIZE_PTS[deal.size]}) + ${deal.sis} (${SIS_PTS[deal.sis]})</p>
+            <div><h4>${deal.name} (${deal.tz})</h4><p style="font-size:11px; color:var(--psq-muted);">Base: ${deal.size} (${SIZE_PTS[deal.size]}) + ${deal.sis} (${SIS_PTS[deal.sis]})</p>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
                 ${ADJ_OPTIONS.map(opt => `<label style="font-size:10px;"><input type="checkbox" onchange="updateQAdj(${deal.id},'${opt}')" ${deal.adj.includes(opt)?'checked':''}> ${opt} (+1)</label>`).join('')}
             </div></div>
             <div style="text-align:right;"><div style="font-size:16px; font-weight:700; color:var(--ps-dark-green);">Projected: [${total}]</div>
-            <select style="margin:10px 0; padding:4px; font-size:11px; width: 100%;">${filtered.map(im => `<option>${im.name}</option>`).join('')}</select>
+            <select style="margin:10px 0; padding:4px; font-size:11px; width: 100%;">${filtered.map(im => `<option>${formatIMName(im)}</option>`).join('')}</select>
             <button class="btn-action active" style="width:100%;">Confirm</button></div>
         </div></div>`;
     }).join('');
@@ -102,12 +102,12 @@ function renderAssignment() {
     const flagged = filtered.filter(im => !im.onRotation);
     aContainer.innerHTML = flagged.map(im => `
         <div class="alert-card"><div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><b>${im.name} (${im.tz})</b> - Reason: ${im.reason}</div>
+        <div><b>${formatIMName(im)} (${im.tz})</b> - Reason: ${im.reason}</div>
         <div style="display:flex; gap:10px;"><button class="btn-action" onclick="resumeIM('${im.name}')">Resume</button><input type="date" style="font-size:10px;"></div>
         </div></div>`).join('');
 
     // Manual Selector
-    document.getElementById('manual-im-select').innerHTML = teamData.filter(im => im.onRotation).map(im => `<option value="${im.name}">${im.name} (${im.tz})</option>`).join('');
+    document.getElementById('manual-im-select').innerHTML = teamData.filter(im => im.onRotation).map(im => `<option value="${im.name}">${formatIMName(im)} (${im.tz})</option>`).join('');
 
     // Eligibility (Static Tier with Header Sort)
     const eContainer = document.getElementById('eligibility-container');
@@ -116,7 +116,7 @@ function renderAssignment() {
         return eligSortDir === 'desc' ? vB - vA : vA - vB;
     });
     eContainer.innerHTML = `<table><thead><tr><th>Name</th><th class="sortable-th" onclick="toggleEligSort()">Tier ↑↓</th><th>Med</th><th>Lg/Ent</th></tr></thead>
-        <tbody>${eligSorted.map(im => `<tr><td><b>${im.name}</b></td><td>${im.tier}</td>
+        <tbody>${eligSorted.map(im => `<tr><td><b>${formatIMName(im)}</b></td><td>${im.tier}</td>
         <td><input type="checkbox" ${im.med?'checked':''}></td>
         <td><input type="checkbox" ${im.lg?'checked':''}></td></tr>`).join('')}</tbody></table>`;
 }
@@ -135,12 +135,14 @@ function updateMetrics() {
     document.getElementById('t-max-pts').innerText = tM;
     document.getElementById('t-deal-pts').innerText = tdP;
     document.getElementById('t-proj-pts').innerText = tpP;
-    document.getElementById('t-cap-pct').innerText = cap + '%';
+    const capEl = document.getElementById('t-cap-pct');
+    capEl.innerText = cap + '%';
+    capEl.className = 'main-val ' + leadCapacityPctClass(cap);
     document.getElementById('t-fill-deals').style.width = (tdP/tM*100)+'%';
     document.getElementById('t-fill-projects').style.width = (tpP/tM*100)+'%';
     document.getElementById('t-risk-total').innerText = `${yR+rR} At-Risk Deals`;
-    document.getElementById('t-risk-breakdown').innerText = `${yR}Y / ${rR}R Health Breakdown`;
-    document.getElementById('t-past-due-proj').innerText = `${pdC} Past Due Projects`;
+    document.getElementById('t-risk-breakdown').innerHTML = formatRiskBreakdown(yR, rR, 'Health Breakdown');
+    document.getElementById('t-past-due-proj').innerHTML = formatPastDueProjects(pdC);
 }
 
 function renderRoster() {
@@ -159,29 +161,53 @@ function renderRoster() {
     });
 
     Object.keys(groups).forEach(key => {
-        const h = document.createElement('div'); h.className = 'group-header'; h.innerText = key; display.appendChild(h);
+        const h = document.createElement('div');
+        h.className = groupHeaderClassForKey(key);
+        h.innerText = key;
+        display.appendChild(h);
         if (currentLayout === 'list') {
-            const t = document.createElement('table'); t.innerHTML = `<thead><tr><th>TZ</th><th>Name</th><th>Deals (Pts)</th><th>Projs (Pts)</th><th>% Cap</th><th>Risks (Y/R|P)</th></tr></thead><tbody></tbody>`;
+            const t = document.createElement('table');
+            t.innerHTML = `<thead><tr><th>TZ</th><th>IM Name</th><th>Deals (Pts)</th><th>Projs (Pts)</th><th>Total / Cap</th><th>% Cap</th><th>Risks (Y/R|P)</th><th>Notes</th></tr></thead><tbody id="b-${key.replace(/\s/g,'')}"></tbody>`;
             display.appendChild(t); const b = t.querySelector('tbody');
             groups[key].forEach(im => {
-                const pct = Math.round(((im.dealPts+im.projPts)/MPC_VALUES[im.tier])*100), c = pct >= 90 ? 'var(--ps-red)' : (pct >= 80 ? 'var(--ps-gold)' : 'var(--ps-green)');
-                b.innerHTML += `<tr><td><b>${im.tz}</b></td><td><b>${im.name}</b></td><td>${im.deals} (${im.dealPts})</td><td>${im.projects} (${im.projPts})</td><td><span style="color:${c}; font-weight:700;">${pct}%</span></td><td>${im.y}Y/${im.r}R|<b style="${im.pd>0?'color:var(--ps-red)':''}">${im.pd}P</b></td></tr>`;
+                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
+                const capClass = leadCapacityPctClass(pct);
+                const n = localStorage.getItem('note_mgr_'+im.name) || '';
+                b.innerHTML += `<tr><td><strong>${im.tz}</strong></td><td><strong>${formatIMName(im)}</strong></td><td>${im.deals} (${im.dealPts})</td><td>${im.projects} (${im.projPts})</td><td><strong>${tot}</strong> / ${m}</td><td><span class="${capClass}" style="font-weight:700;">${pct}%</span></td><td>${formatIMRisksCell(im.y, im.r, im.pd)}</td><td>${n.substring(0,12)}${n.length>12?'...':''} <span class="edit-btn" onclick="openNoteModal('${im.name.replace(/'/g, "\\'")}')">✎</span></td></tr>`;
             });
         } else {
             const grid = document.createElement('div'); grid.className = 'im-grid'; display.appendChild(grid);
             groups[key].forEach(im => {
-                const m = MPC_VALUES[im.tier], pct = Math.round(((im.dealPts+im.projPts)/m)*100), c = pct >= 90 ? 'var(--ps-red)' : (pct >= 80 ? 'var(--ps-gold)' : 'var(--ps-green)');
-                grid.innerHTML += `<div class="im-card" style="border-top-color:${c}">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div><h3>${im.name}</h3><span class="sub-info">${im.tz} • Tier ${im.tier.slice(1)}</span></div>
-                        <span style="font-weight:700; color:${c}; font-size:12px;">${pct}%</span>
-                    </div>
-                    <div class="stats">Pts: <b>${im.dealPts+im.projPts}</b>/${m} | Deals: ${im.deals}<br>Projects past due: <b style="${im.pd > 0 ? 'color:var(--ps-red);' : ''}">${im.pd}</b></div>
+                const m = MPC_VALUES[im.tier], tot = im.dealPts + im.projPts, pct = Math.round((tot/m)*100);
+                const capClass = leadCapacityPctClass(pct);
+                const n = localStorage.getItem('note_mgr_'+im.name) || 'None';
+                grid.innerHTML += `<div class="${imCardClassList(im)}">
+                    <div style="display:flex; justify-content:space-between;"><h3>${formatIMName(im)}</h3><span class="${capClass}" style="font-weight:700; font-size:12px;">${pct}%</span></div>
+                    <div class="sub-info">${im.tz}</div>
+                    <div class="stats">Pts: <b>${tot}</b>/${m} | Deals: ${im.deals} | Projs: ${im.projects}<br>Risks: ${formatIMRisksInline(im.y, im.r, im.pd)}</div>
                     <div class="summary-cap-bar" style="height:6px;"><div style="width:${(im.dealPts/m)*100}%; background:var(--ps-green);"></div><div style="width:${(im.projPts/m)*100}%; background:var(--ps-blue);"></div></div>
+                    <div style="font-size:10px; color:#999; border-top:1px solid #eee; padding-top:5px; height:30px; overflow:hidden;">"${n}" <span class="edit-btn" onclick="openNoteModal('${im.name.replace(/'/g, "\\'")}')">✎</span></div>
                 </div>`;
             });
         }
     });
+}
+
+function openNoteModal(name) {
+    editingIM = name;
+    document.getElementById('modal-im-name').innerText = `Notes for ${name}`;
+    document.getElementById('note-text').value = localStorage.getItem('note_mgr_'+name) || '';
+    document.getElementById('note-modal').style.display = 'flex';
+}
+
+function closeNoteModal() {
+    document.getElementById('note-modal').style.display = 'none';
+}
+
+function saveNote() {
+    localStorage.setItem('note_mgr_'+editingIM, document.getElementById('note-text').value);
+    closeNoteModal();
+    renderContent();
 }
 
 function renderContent() { renderRoster(); renderAssignment(); }

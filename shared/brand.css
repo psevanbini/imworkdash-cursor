@@ -1,0 +1,91 @@
+/**
+ * ParentSquare Brand 2.0 tokens (May 2026 internal brand guide)
+ * https://fonts: Inter (body), Plus Jakarta Sans (Atyp alternate — display/headlines)
+ */
+:root {
+  /* Primary palette */
+  --psq-green: #68e246;
+  --psq-green-dark: #224b17;
+  --psq-green-light: #e5fae0;
+
+  --psq-blue: #10a3ff;
+  --psq-blue-dark: #053655;
+  --psq-blue-light: #d7efff;
+
+  --psq-orange: #ffb82a;
+  --psq-orange-dark: #553d0e;
+  --psq-orange-light: #fff3db;
+
+  --psq-pink: #fc57e5;
+  --psq-pink-dark: #541d4c;
+  --psq-pink-light: #fee3fa;
+
+  --psq-purple: #be77ff;
+  --psq-purple-dark: #3e2655;
+  --psq-purple-light: #f3e7ff;
+
+  /* Tints & shades (brand guide §4.12) */
+  --psq-green-05: #81e664;
+  --psq-green-07: #56bc3a;
+  --psq-green-08: #43a02e;
+  --psq-green-09: #347123;
+  --psq-orange-05: #ffc34d;
+  --psq-orange-07: #d49923;
+  --psq-pink-05: #fc73e9;
+  --psq-pink-11: #2a0e26;
+  --psq-green-01: #e5fae0;
+  --psq-green-02: #ccf5c1;
+  --psq-blue-01: #d7efff;
+  --psq-blue-02: #afe0ff;
+  --psq-purple-01: #f3e7ff;
+  --psq-purple-02: #e8d0ff;
+  --psq-pink-01: #fee3fa;
+  --psq-pink-02: #fec7f6;
+  --psq-orange-01: #fff3db;
+  --psq-orange-02: #ffe7b8;
+  --psq-purple-05: #c789ff;
+  --psq-purple-07: #9c5fd4;
+  --psq-green-03: #b3f0a2;
+  --psq-border: #cce5f5;
+  --psq-muted: #5a7a8f;
+  --psq-surface: #ffffff;
+  --psq-page: #f5faff;
+
+  /* Legacy aliases (used in JS and existing markup) */
+  --ps-green: var(--psq-green);
+  --ps-dark-green: var(--psq-green-dark);
+  --ps-light-green: var(--psq-green-light);
+  --ps-blue: var(--psq-blue);
+  --ps-dark-blue: var(--psq-blue-dark);
+  --ps-light-blue: var(--psq-blue-light);
+  --ps-gold: var(--psq-orange);
+  --ps-orange: var(--psq-orange);
+  --ps-light-gray: var(--psq-page);
+  --ps-dark-gray: var(--psq-blue-dark);
+  --ps-red: var(--psq-pink-dark);
+  --ps-light-red: var(--psq-pink-light);
+
+  --font-display: "Plus Jakarta Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-card: 0 2px 12px rgba(5, 54, 85, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  background: var(--psq-page);
+  color: var(--psq-blue-dark);
+}
+
+h1, h2, h3, h4, .chrome-title, .header-text h1, .section-header, .sub-tab, .tab {
+  font-family: var(--font-display);
+}
