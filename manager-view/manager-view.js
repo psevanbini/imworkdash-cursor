@@ -1,5 +1,12 @@
 const MPC_VALUES = TeamData.MPC_VALUES;
-const SIZE_PTS = { "Strategic": 4, "Large": 2, "Enterprise": 2, "Medium": 3, "Small": 1 };
+const SIZE_PTS = {
+  "Single": 1,
+  "Small": 2,
+  "Medium": 3,
+  "Large": 2,
+  "Enterprise": 2,
+  "Strategic": 4
+};
 const SIS_PTS = { "PowerSchool": 3, "Infinite Campus": 2, "Aeries": 2, "Skyward SFTP": 2, "Clever": 2, "RenWeb/FACTS": 1 };
 const ADJ_OPTIONS = ["Extended Launch", "Proof of Concept", "Pilots", "DSAs/DUAs/DPAs", "DOEs/RICs/BOCES", "New Hire"];
 
@@ -47,13 +54,74 @@ function filterByRegionalTz(items) {
     return currentTZ === 'all' ? items : items.filter(function (item) { return item.tz === currentTZ; });
 }
 
+function managerApprovalQueue() {
+    return filterByRegionalTz(dealQueue).filter(dealNeedsManagerApproval);
+}
+
+function hasScheduledReturn(im) {
+    return Boolean((im.returnToRotationAt || '').trim());
+}
+
+/** Auto capacity/velocity removals — must currently qualify and have no return date (tab badge). */
+function autoRotationAlerts() {
+    return filterByRegionalTz(teamData).filter(function (im) {
+        return (
+            !im.onRotation &&
+            im.removalSource === 'auto' &&
+            !hasScheduledReturn(im) &&
+            getAutoRemovalReasons(im).length > 0
+        );
+    });
+}
+
+/** Off rotation: manual removals, or auto removals with a return date set. */
+function removedFromRotationQueue() {
+    return filterByRegionalTz(teamData).filter(function (im) {
+        if (im.onRotation) return false;
+        if (im.removalSource === 'manual') return true;
+        return im.removalSource === 'auto' && hasScheduledReturn(im);
+    });
+}
+
+function rotationAlertCardHtml(im) {
+    const days = businessDaysSince(im.removedAt);
+    const returnVal = im.returnToRotationAt || '';
+    const futureReturn = isFutureReturnDate(returnVal);
+    const scheduledText = returnVal
+        ? `${futureReturn ? 'Scheduled return' : 'Return date'}: ${formatReturnDateLabel(returnVal)}`
+        : '';
+    const sourceTag = im.removalSource === 'manual'
+        ? '<span class="rotation-source-tag rotation-source-tag--manual">Manual</span>'
+        : '';
+    return `<div class="alert-card">
+        <div class="alert-card-row">
+          <div><b>${formatIMName(im)} (${im.tz})</b> ${sourceTag} — Reason: ${formatRemovalReason(im)}</div>
+          <div class="alert-card-actions">
+            <span class="rotation-days-out">${formatBusinessDaysOut(days)}</span>
+            <button type="button" class="btn-action" onclick="resumeIM('${escapeAttr(im.name)}')">Resume</button>
+            <div class="rotation-return-field">
+              <label class="rotation-return-label">Return to rotation</label>
+              <input type="date" class="rotation-return-date" value="${returnVal}" onchange="updateReturnDate('${escapeAttr(im.name)}', this.value)">
+              <span class="rotation-return-scheduled">${scheduledText}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+}
+
+function setTabBadge(elementId, count) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.innerText = count;
+    el.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
 function updateBadge() {
-    const alerts = filterByRegionalTz(teamData).filter(im => !im.onRotation).length;
-    const queueCount = filterByRegionalTz(dealQueue).length;
-    const total = queueCount + alerts;
-    const badge = document.getElementById('assignment-badge');
-    badge.innerText = total;
-    badge.style.display = total > 0 ? 'inline-block' : 'none';
+    const queueCount = managerApprovalQueue().length;
+    const alertCount = autoRotationAlerts().length;
+    setTabBadge('assignment-badge', queueCount + alertCount);
+    setTabBadge('queue-badge', queueCount);
+    setTabBadge('rotation-badge', alertCount);
 }
 
 function setTZFilter(tz, btn) {
@@ -139,11 +207,25 @@ function formatRemovalReason(im) {
     return im.reason || '—';
 }
 
+function clearAutoRemovalState(im) {
+    im.onRotation = true;
+    im.removalSource = '';
+    im.reason = '';
+    im.removedAt = '';
+    im.returnToRotationAt = '';
+}
+
 /** Remove IMs from deal-assignment rotation when at 100%+ capacity or >5 deals/week velocity. */
 function syncRotationRemovals() {
     teamData.forEach(im => {
+        if (im.rotationResumeOverride) return;
         const autoReasons = getAutoRemovalReasons(im);
-        if (autoReasons.length === 0) return;
+        if (autoReasons.length === 0) {
+            if (im.removalSource === 'auto' && !hasScheduledReturn(im)) {
+                clearAutoRemovalState(im);
+            }
+            return;
+        }
         if (im.onRotation) {
             im.onRotation = false;
             im.removalSource = 'auto';
@@ -200,6 +282,7 @@ function confirmRotationRemoval() {
     const name = document.getElementById('manual-im-select').value;
     const im = teamData.find(i => i.name === name);
     im.onRotation = false;
+    im.rotationResumeOverride = false;
     im.removalSource = 'manual';
     im.reasonCategory = category;
     im.reasonNotes = notes;
@@ -213,7 +296,9 @@ function confirmRotationRemoval() {
 
 function resumeIM(name) {
     const im = teamData.find(i => i.name === name);
+    if (!im) return;
     im.onRotation = true;
+    im.rotationResumeOverride = true;
     im.removalSource = '';
     im.reason = '';
     im.reasonCategory = '';
@@ -262,13 +347,13 @@ function eligibilityCheckboxHtml(im, field) {
 
 function renderAssignment() {
     const filtered = filterByRegionalTz(teamData);
-    const filteredDeals = filterByRegionalTz(dealQueue);
+    const approvalDeals = managerApprovalQueue();
 
-    // New Deal Queue
+    // New Deal Queue (Large / Enterprise / Strategic only — Single/Small/Medium auto-assign)
     const qContainer = document.getElementById('deal-queue-container');
-    qContainer.innerHTML = filteredDeals.length === 0
-        ? '<p style="font-size:12px; color:var(--psq-muted); margin:0;">No deals in queue for this region.</p>'
-        : filteredDeals.map(deal => {
+    qContainer.innerHTML = approvalDeals.length === 0
+        ? '<p style="font-size:12px; color:var(--psq-muted); margin:0;">No deals awaiting manager approval in this region. Single, Small, and Medium deals auto-assign on rotation.</p>'
+        : approvalDeals.map(deal => {
         const base = (SIZE_PTS[deal.size] || 0) + (SIS_PTS[deal.sis] || 0);
         const total = base + deal.adj.length;
         const assignOptions = dealAssignIMOptionsHtml(filtered, MPC_VALUES, deal.size);
@@ -284,33 +369,23 @@ function renderAssignment() {
         </div></div>`;
     }).join('');
 
-    // Rotation Removal Alerts
+    // Rotation Removal Alerts (auto, no return date yet — drives tab badge)
     const aContainer = document.getElementById('alerts-container');
-    const flagged = filtered.filter(im => !im.onRotation);
+    const flagged = autoRotationAlerts();
     aContainer.innerHTML = flagged.length === 0
-        ? '<p style="font-size:12px; color:var(--psq-muted); margin:0;">No IMs currently removed from rotation.</p>'
-        : flagged.map(im => {
-            const days = businessDaysSince(im.removedAt);
-            const returnVal = im.returnToRotationAt || '';
-            const futureReturn = isFutureReturnDate(returnVal);
-            const scheduledText = returnVal
-                ? `${futureReturn ? 'Scheduled return' : 'Return date'}: ${formatReturnDateLabel(returnVal)}`
-                : '';
-            return `<div class="alert-card">
-        <div class="alert-card-row">
-          <div><b>${formatIMName(im)} (${im.tz})</b> — Reason: ${formatRemovalReason(im)}</div>
-          <div class="alert-card-actions">
-            <span class="rotation-days-out">${formatBusinessDaysOut(days)}</span>
-            <button type="button" class="btn-action" onclick="resumeIM('${escapeAttr(im.name)}')">Resume</button>
-            <div class="rotation-return-field">
-              <label class="rotation-return-label">Return to rotation</label>
-              <input type="date" class="rotation-return-date" value="${returnVal}" onchange="updateReturnDate('${escapeAttr(im.name)}', this.value)">
-              <span class="rotation-return-scheduled">${scheduledText}</span>
-            </div>
-          </div>
-        </div>
-      </div>`;
-        }).join('');
+        ? '<p class="rotation-empty-msg">No IMs auto-removed for capacity or velocity awaiting action in this region.</p>'
+        : flagged.map(rotationAlertCardHtml).join('');
+
+    const removedContainer = document.getElementById('removed-from-queue-container');
+    const removed = removedFromRotationQueue().sort(function (a, b) {
+        const da = a.returnToRotationAt || '9999-12-31';
+        const db = b.returnToRotationAt || '9999-12-31';
+        if (da !== db) return da.localeCompare(db);
+        return a.name.localeCompare(b.name);
+    });
+    removedContainer.innerHTML = removed.length === 0
+        ? '<p class="rotation-empty-msg">No IMs currently removed from rotation in this region.</p>'
+        : removed.map(rotationAlertCardHtml).join('');
 
     // Manual Selector (regional filter; on rotation only)
     const onRotation = filtered.filter(im => im.onRotation);

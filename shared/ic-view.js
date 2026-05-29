@@ -9,7 +9,7 @@
   var personaName = "";
   var myDeals = [];
   var myProjects = [];
-  var tierMax = 120;
+  var tierMax = 250;
 
   function persist() {
     ICSync.saveWorkspace(roster, personaName, myDeals, myProjects);
@@ -22,7 +22,7 @@
     if (!ws) return;
     myDeals = ws.deals;
     myProjects = ws.projects;
-    tierMax = TeamData.MPC_VALUES[ws.im.tier] || 120;
+    tierMax = TeamData.MPC_VALUES[ws.im.tier] || 250;
     var sub = document.querySelector(".header-text p");
     if (sub) sub.textContent = personaName + " — My Workload & Assignments";
   }
@@ -52,6 +52,7 @@
     document.getElementById("stat-deals-count").innerText = myDeals.length;
     document.getElementById("stat-projects-count").innerText = myProjects.length;
     document.getElementById("stat-total-pts").innerText = total;
+    document.getElementById("stat-tier-max").innerText = tierMax;
     document.getElementById("stat-deal-pts").innerText = dealPts;
     document.getElementById("stat-proj-pts").innerText = projPts;
 

@@ -129,11 +129,17 @@ function normalizeIMEligibility(im) {
   if (eligibilityLgDisabled(im)) im.lg = false;
 }
 
+/** Single/Small/Medium auto-assign on rotation — manager approval only for Lg/Ent/Strategic. */
+function dealNeedsManagerApproval(deal) {
+  var size = deal && deal.size;
+  return size === "Large" || size === "Enterprise" || size === "Strategic";
+}
+
 /** On rotation + segment training for deal size (Med / Lg/Ent). */
 function imEligibleForDealSize(im, dealSize) {
   if (!im.onRotation) return false;
   var tier = imTierNumber(im);
-  if (dealSize === "Small") return true;
+  if (dealSize === "Single" || dealSize === "Small") return true;
   if (dealSize === "Medium") return tier >= 2 && im.med;
   if (dealSize === "Strategic" || dealSize === "Large" || dealSize === "Enterprise") {
     return tier >= 3 && im.lg;
@@ -142,7 +148,7 @@ function imEligibleForDealSize(im, dealSize) {
 }
 
 function dealAssignEmptyLabel(dealSize) {
-  if (dealSize === "Small") return "No eligible IMs (on rotation)";
+  if (dealSize === "Single" || dealSize === "Small") return "No eligible IMs (on rotation)";
   if (dealSize === "Medium") return "No eligible IMs (on rotation + Med training)";
   if (
     dealSize === "Large" ||

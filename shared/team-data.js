@@ -7,7 +7,7 @@ var TeamData = (function () {
   var IC_PERSONA = "Jordan Miller";
   var LEAD_TERRITORY_TZ = "EST";
 
-  var MPC_VALUES = { T1: 70, T2: 90, T3: 120, T4: 120, T5: 90 };
+  var MPC_VALUES = { T1: 200, T2: 225, T3: 250, T4: 250, T5: 100 };
 
   var DEFAULT_ROSTER = [
     { name: "Alex Rivers", tz: "EST", tier: "T4", dealPts: 65, projPts: 15, deals: 10, projects: 2, pd: 0, y: 1, r: 0, velocity: 2, med: true, lg: true, onRotation: true, reason: "" },
@@ -38,7 +38,7 @@ var TeamData = (function () {
 
   var DEFAULT_DEAL_QUEUE = [
     { id: 901, name: "Mountain View USD", size: "Large", sis: "Infinite Campus", tz: "PST", adj: [] },
-    { id: 902, name: "Riverside Unified SD", size: "Medium", sis: "PowerSchool", tz: "EST", adj: [] },
+    { id: 902, name: "Riverside Unified SD", size: "Strategic", sis: "PowerSchool", tz: "EST", adj: [] },
     { id: 903, name: "Lake County Schools", size: "Enterprise", sis: "Aeries", tz: "CST", adj: [] }
   ];
 
@@ -182,6 +182,9 @@ var TeamData = (function () {
     migrateLegacyManagerStorage();
     var roster = loadRoster();
     migrateNotes(roster);
+    if (typeof ICSync !== "undefined" && ICSync.seedRosterDeals) {
+      if (ICSync.seedRosterDeals(roster)) saveRoster(roster);
+    }
     return roster;
   }
 

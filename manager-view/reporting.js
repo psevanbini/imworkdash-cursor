@@ -35,6 +35,7 @@ var ManagerReporting = (function () {
   /** ParentSquare Brand 2.0 approved palette only */
   var BRAND = {
     green: "#68e246",
+    green03: "#b3f0a2",
     green05: "#81e664",
     green07: "#56bc3a",
     green08: "#43a02e",
@@ -53,6 +54,7 @@ var ManagerReporting = (function () {
   };
 
   var SEGMENT_COLORS = {
+    Single: BRAND.green03,
     Small: BRAND.green05,
     Medium: BRAND.blue05,
     Large: BRAND.purple,

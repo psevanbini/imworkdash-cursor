@@ -11,6 +11,7 @@
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
   <script src="shared/team-data.js"></script>
+  <script src="shared/ic-sync.js"></script>
   <script src="shared/view-sync.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
   <link rel="stylesheet" href="manager-view/reporting.css">
@@ -91,8 +92,8 @@
 
   <div id="view-assignment" class="tab-content" style="display:none;">
     <div class="assignment-sub-tabs sub-tabs">
-      <div id="assignment-tab-queue" class="sub-tab active" onclick="switchAssignmentSubTab('queue')">New Deal Queue</div>
-      <div id="assignment-tab-rotation" class="sub-tab" onclick="switchAssignmentSubTab('rotation')">Rotation Removal Alerts</div>
+      <div id="assignment-tab-queue" class="sub-tab active" onclick="switchAssignmentSubTab('queue')">New Deal Queue <span id="queue-badge" class="tab-badge">0</span></div>
+      <div id="assignment-tab-rotation" class="sub-tab" onclick="switchAssignmentSubTab('rotation')">Rotation Removal Alerts <span id="rotation-badge" class="tab-badge">0</span></div>
       <div id="assignment-tab-eligibility" class="sub-tab" onclick="switchAssignmentSubTab('eligibility')">IM Account Eligibility</div>
     </div>
 
@@ -102,7 +103,12 @@
 
     <div id="assignment-view-rotation" class="assignment-tab-panel" style="display:none;">
       <div class="section-header">Rotation Removal Alerts</div>
+      <p class="rotation-section-desc">Auto-removed for capacity or velocity — set a return date to move IMs to the list below.</p>
       <div id="alerts-container"></div>
+
+      <div class="section-header rotation-removed-header">Currently Removed from Rotation</div>
+      <p class="rotation-section-desc">IMs off the deal assignment queue with a scheduled return, plus manual removals.</p>
+      <div id="removed-from-queue-container"></div>
 
       <div class="section-header">Manual Rotation Removal</div>
       <div class="search-panel rotation-manual-panel">

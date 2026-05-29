@@ -3,7 +3,7 @@
  * HubSpot TTV, CSAT, and historical rotation events are simulated for the mockup.
  */
 var ReportingData = (function () {
-  var SEGMENTS = ["Small", "Medium", "Large", "Enterprise", "Strategic"];
+  var SEGMENTS = ["Single", "Small", "Medium", "Large", "Enterprise", "Strategic"];
   var ADJ_TYPES = [
     "Extended Launch",
     "Proof of Concept",

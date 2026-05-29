@@ -14,13 +14,49 @@
   display: flex;
 }
 
-#assignment-badge {
+#assignment-badge,
+#queue-badge,
+#rotation-badge {
   color: var(--psq-pink-11);
 }
 
 .assignment-sub-tabs {
   margin-top: 0;
   margin-bottom: 20px;
+}
+
+.rotation-section-desc {
+  font-size: 11px;
+  color: var(--psq-muted);
+  margin: -8px 0 14px;
+  line-height: 1.45;
+}
+
+.rotation-removed-header {
+  margin-top: 28px;
+}
+
+.rotation-empty-msg {
+  font-size: 12px;
+  color: var(--psq-muted);
+  margin: 0;
+}
+
+.rotation-source-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.rotation-source-tag--manual {
+  background: var(--psq-blue-03, #e8f0f8);
+  color: var(--psq-blue-dark);
 }
 
 .rotation-manual-panel {
