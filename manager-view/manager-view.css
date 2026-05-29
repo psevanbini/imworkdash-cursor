@@ -42,6 +42,23 @@
   margin: 0;
 }
 
+/* Top rotation alerts — pink to match notification badge */
+#alerts-container .alert-card {
+  background: var(--psq-pink-01);
+  border-left: 6px solid var(--psq-pink);
+  border: 1px solid var(--psq-pink-02);
+  border-left-width: 6px;
+  border-left-color: var(--psq-pink);
+}
+
+#alerts-container .alert-card b {
+  color: var(--psq-pink-11);
+}
+
+#alerts-container .rotation-days-out {
+  color: var(--psq-pink-dark);
+}
+
 .rotation-source-tag {
   display: inline-block;
   font-size: 9px;

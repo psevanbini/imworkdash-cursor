@@ -3,7 +3,7 @@ var ICSync = (function () {
   var DEAL_MIN = 30;
   var DEAL_MAX = 50;
   /** Bump to force reseed when deal-count rules change. */
-  var DEAL_COUNT_SCHEMA = 8;
+  var DEAL_COUNT_SCHEMA = 10;
   var LOWER_DEAL_MIN = 30;
   var UPPER_DEAL_MIN = 40;
   var UPPER_DEAL_MAX = 50;
@@ -171,16 +171,75 @@ var ICSync = (function () {
     return map;
   }
 
+  var IC_STAGE_ORDER = [
+    "Inbound", "Kickoff", "Setup", "Feature Enablement", "Platform Ready",
+    "Monitor", "On Hold", "Stalled"
+  ];
+
+  function isICPersona(imName) {
+    return imName === TeamData.getICPersonaName();
+  }
+
+  /** IC sample: no End of Implementation; fixed Inbound/Kickoff/Stalled/Monitor counts. */
+  function buildICPersonaStagePlan(count) {
+    var buckets = [];
+    function add(stage, n) {
+      for (var i = 0; i < n; i++) buckets.push(stage);
+    }
+    add("Inbound", 3);
+    add("Kickoff", 1);
+    add("Stalled", 2);
+    add("Monitor", 10);
+    add("On Hold", 2);
+    var remaining = Math.max(0, count - buckets.length);
+    var flexStages = ["Setup", "Feature Enablement", "Platform Ready"];
+    if (remaining > 0) {
+      var base = Math.floor(remaining / flexStages.length);
+      var rem = remaining % flexStages.length;
+      var flexCounts = flexStages.map(function (_, idx) {
+        return base + (idx < rem ? 1 : 0);
+      });
+      if (remaining >= flexStages.length) {
+        flexCounts[0] += 1;
+        flexCounts[2] -= 1;
+      }
+      flexStages.forEach(function (stage, idx) {
+        add(stage, flexCounts[idx]);
+      });
+    }
+    var tally = {};
+    buckets.forEach(function (stage) {
+      tally[stage] = (tally[stage] || 0) + 1;
+    });
+    var plan = [];
+    IC_STAGE_ORDER.forEach(function (stage) {
+      var n = tally[stage] || 0;
+      for (var j = 0; j < n; j++) plan.push(stage);
+    });
+    while (plan.length < count) plan.push("Setup");
+    return plan.slice(0, count);
+  }
+
+  function stageForDeal(imName, i, count, holdStalledStages, activeStageIdxRef) {
+    if (isICPersona(imName)) return buildICPersonaStagePlan(count)[i];
+    if (holdStalledStages[i]) return holdStalledStages[i];
+    var stage = ACTIVE_STAGES[activeStageIdxRef.i % ACTIVE_STAGES.length];
+    activeStageIdxRef.i += 1;
+    return stage;
+  }
+
   function buildDealsForIM(imName, imIndex, dealCount) {
     var sizes = ["Single", "Small", "Medium", "Large", "Enterprise", "Strategic"];
     var sisList = ["PowerSchool", "Infinite Campus", "Aeries", "Skyward SFTP", "Clever", "RenWeb/FACTS"];
     var seed = nameHash(imName) + imIndex * 997;
     var baseId = (imIndex + 1) * 10000;
     var count = dealCount || DEAL_MIN;
+    var icSample = isICPersona(imName);
+    var stagePlan = icSample ? buildICPersonaStagePlan(count) : null;
     var redIndices = pickRedDealIndices(imName, count);
     var yellowIndices = pickYellowDealIndices(imName, count, redIndices);
-    var holdStalledStages = pickHoldStalledStages(imName, count);
-    var activeStageIdx = 0;
+    var holdStalledStages = icSample ? {} : pickHoldStalledStages(imName, count);
+    var activeStageIdxRef = { i: 0 };
     var deals = [];
     for (var i = 0; i < count; i++) {
       var stem = DISTRICT_STEMS[(seed + i) % DISTRICT_STEMS.length];
@@ -188,7 +247,7 @@ var ICSync = (function () {
       var dup = Math.floor(i / DISTRICT_STEMS.length);
       var label = dup > 0 ? stem + " " + type + " (" + (dup + 1) + ")" : stem + " " + type;
       var health = redIndices[i] ? "red" : (yellowIndices[i] ? "yellow" : "green");
-      var stage = holdStalledStages[i] || ACTIVE_STAGES[activeStageIdx++ % ACTIVE_STAGES.length];
+      var stage = stagePlan ? stagePlan[i] : stageForDeal(imName, i, count, holdStalledStages, activeStageIdxRef);
       var adj = [];
       if (i % 11 === 0) adj.push("Pilots");
       else if (i % 13 === 0) adj.push("Extended Launch");
