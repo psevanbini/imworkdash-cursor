@@ -1,0 +1,45 @@
+---
+description: Manager view baseline is 5/29/26; ignore 6/2 Manager edits unless explicitly requested.
+globs: ManagerView.html,manager-view/**/*
+alwaysApply: false
+---
+
+# Manager view baseline (5/29/26)
+
+Treat the **Manager view** as frozen at the **5/29/2026** codebase (`main` commit `1a3a23d` or later commits that do **not** change Manager files).
+
+## Do not re-apply (6/2/26 work — rejected)
+
+Unless the user **explicitly** asks to change the Manager view again, do **not** add or restore:
+
+- `manager-view/manager-projects.js`
+- **Project Management** tab (`tab-projects`, `view-projects`) in `ManagerView.html`
+- Manager imports of `shared/projects-data.js` or `shared/lead-view.css`
+- Manager wiring to `ProjectsData`, `renderManagerProjects()`, or `countRegionalProjects()` in `manager-view/manager-view.js`
+- Manager-specific project panel CSS in `manager-view/manager-view.css`
+
+## In scope for Manager work
+
+When editing Manager files, match patterns already on `main` at 5/29:
+
+- Roster, Deal Assignment Review, Reporting tabs
+- `manager-view/manager-view.js`, `reporting.js`, `reporting-data.js`
+- Shared team data via `TeamData` / `ic-sync` as already wired on 5/29
+
+## Out of scope (unless user overrides this rule)
+
+- Porting Team Lead **Project Management** UI or logic into Manager
+- Assuming Manager has org-project roster / sponsor “My Projects” features
+
+## Team Lead is separate
+
+`LeadView.html`, `shared/lead-view.js`, `shared/lead-view.css`, and `shared/projects-data.js` are the Team Lead surface. Changes there do **not** imply Manager should be updated to match.
+
+## If Manager files drift
+
+Restore Manager tracked files from git baseline:
+
+```bash
+git restore ManagerView.html manager-view/
+rm -f manager-view/manager-projects.js
+```
