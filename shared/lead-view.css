@@ -1,0 +1,291 @@
+/* Team Lead view — project management + roster */
+
+.lead-main-tabs {
+  margin-bottom: 20px;
+}
+
+.lead-tab-panel {
+  display: none;
+}
+
+.lead-tab-panel.active {
+  display: block;
+}
+
+.lead-project-subtabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.lead-project-subtabs .sub-tab {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.lead-project-panel {
+  display: none;
+}
+
+.lead-project-panel.active {
+  display: block;
+}
+
+.modal--project-edit {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.lead-project-edit-title {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--ps-dark-green);
+  font-family: var(--font-display);
+}
+
+.lead-edit-project-form {
+  max-width: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.projects-table .col-edit {
+  width: 36px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.lead-new-project-form {
+  max-width: 640px;
+  background: var(--psq-surface);
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.lead-form-field {
+  margin-bottom: 16px;
+}
+
+.lead-form-field label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--psq-blue-dark);
+  margin-bottom: 6px;
+}
+
+.lead-form-field input[type="text"],
+.lead-form-field input[type="date"],
+.lead-form-field select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  color: var(--psq-blue-dark);
+  box-sizing: border-box;
+}
+
+.lead-contrib-picker-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.lead-contrib-picker-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.lead-contrib-picker-row .btn-action {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.lead-contrib-picker-row .btn-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lead-contrib-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 0;
+}
+
+.lead-contrib-list:empty::before {
+  content: "No contributors added yet.";
+  font-size: 11px;
+  color: var(--psq-muted);
+  font-style: italic;
+}
+
+.lead-contrib-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  font-size: 11px;
+  background: var(--psq-bg);
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-sm);
+  color: var(--psq-blue-dark);
+}
+
+.lead-contrib-chip-remove {
+  border: none;
+  background: transparent;
+  color: var(--psq-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.lead-contrib-chip-remove:hover {
+  color: var(--psq-blue-dark);
+}
+
+.lead-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lead-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--psq-border);
+}
+
+.lead-form-hint {
+  font-size: 11px;
+  color: var(--psq-muted);
+  margin-top: 4px;
+}
+
+.lead-form-success {
+  font-size: 12px;
+  color: var(--ps-dark-green);
+  font-weight: 600;
+  margin-top: 12px;
+  display: none;
+}
+
+.lead-form-success.visible {
+  display: block;
+}
+
+.project-roster-contributors {
+  font-size: 11px;
+  color: var(--psq-muted);
+  vertical-align: top;
+}
+
+.project-roster-contributor-line {
+  display: block;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.project-roster-contributor-line + .project-roster-contributor-line {
+  margin-top: 2px;
+}
+
+.project-roster-contributors strong {
+  color: var(--psq-blue-dark);
+  font-weight: 600;
+}
+
+.lead-roster-section {
+  margin-bottom: 28px;
+}
+
+.lead-roster-section--by-im {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--psq-border);
+}
+
+.lead-im-project-controls {
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.lead-im-sort-hint {
+  margin: 0;
+  align-self: center;
+}
+
+.lead-im-project-block {
+  margin-bottom: 10px;
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-md);
+  background: var(--psq-surface);
+  overflow: hidden;
+}
+
+.lead-im-project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: var(--psq-blue-light);
+  color: var(--psq-blue-dark);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lead-im-project-header:hover {
+  background: #c5e4fc;
+}
+
+.lead-im-project-header .lead-im-project-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--psq-muted);
+}
+
+.lead-im-project-body {
+  padding: 0 12px 12px;
+}
+
+.lead-im-project-block.is-collapsed .lead-im-project-body {
+  display: none;
+}
+
+.lead-im-project-block .projects-table {
+  margin-bottom: 0;
+}
+
+.lead-roster-section-title {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.lead-roster-section-desc {
+  margin-top: 0;
+  margin-bottom: 12px;
+}

@@ -8,10 +8,12 @@
   <link rel="stylesheet" href="shared/brand.css">
   <link rel="stylesheet" href="shared/dashboard.css">
   <link rel="stylesheet" href="shared/embed.css">
+  <link rel="stylesheet" href="shared/lead-view.css">
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
   <script src="shared/team-data.js"></script>
   <script src="shared/ic-sync.js"></script>
+  <script src="shared/projects-data.js"></script>
   <script src="shared/view-sync.js"></script>
   <style>
     .logo img { height: 40px; width: 40px; }
@@ -25,7 +27,7 @@
     <div class="logo"><img src="logo.png" alt="ParentSquare"></div>
     <div class="header-text">
       <h1>Implementation Team Lead Dashboard</h1>
-      <p>EST Regional Workload</p>
+      <p id="lead-header-sub">EST Regional Workload</p>
     </div>
   </header>
 
@@ -56,19 +58,219 @@
     </div>
   </div>
 
-  <div class="controls">
-    <div class="control-group">
-      <button id="btn-list" class="btn-action active" onclick="LeadView.switchLayout('list')">List View</button>
-      <button id="btn-card" class="btn-action" onclick="LeadView.switchLayout('card')">Card View</button>
+  <div class="sub-tabs lead-main-tabs">
+    <div id="lead-tab-roster" class="sub-tab active" onclick="LeadView.switchMainTab('roster')">Team Roster</div>
+    <div id="lead-tab-projects" class="sub-tab" onclick="LeadView.switchMainTab('projects')">Project Management</div>
+  </div>
+
+  <div id="lead-view-roster" class="lead-tab-panel active">
+    <div class="controls">
+      <div class="control-group">
+        <button id="btn-list" class="btn-action active" onclick="LeadView.switchLayout('list')">List View</button>
+        <button id="btn-card" class="btn-action" onclick="LeadView.switchLayout('card')">Card View</button>
+      </div>
+      <div class="control-group">
+        <span class="eyebrow" style="margin-right: 8px;">Group By:</span>
+        <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="LeadView.setSort('tier')">Tier ↑↓</button>
+        <button id="sort-cap" class="btn-action btn-sort" onclick="LeadView.setSort('cap')">% Cap ↑↓</button>
+      </div>
     </div>
-    <div class="control-group">
-      <span class="eyebrow" style="margin-right: 8px;">Group By:</span>
-      <button id="sort-tier" class="btn-action btn-sort active-sort" onclick="LeadView.setSort('tier')">Tier ↑↓</button>
-      <button id="sort-cap" class="btn-action btn-sort" onclick="LeadView.setSort('cap')">% Cap ↑↓</button>
+    <div id="territory-display"></div>
+  </div>
+
+  <div id="lead-view-projects" class="lead-tab-panel">
+    <div class="sub-tabs assignment-sub-tabs lead-project-subtabs">
+      <div id="lead-proj-tab-roster" class="sub-tab active" onclick="LeadView.switchProjectSubTab('roster')">Project Roster</div>
+      <div id="lead-proj-tab-mine" class="sub-tab" onclick="LeadView.switchProjectSubTab('mine')">My Projects</div>
+      <div id="lead-proj-tab-new" class="sub-tab" onclick="LeadView.switchProjectSubTab('new')">New Project</div>
+    </div>
+
+    <div id="lead-proj-panel-roster" class="lead-project-panel active">
+      <div class="section-header">Project Roster</div>
+      <p class="lead-form-hint" style="margin-top:-8px; margin-bottom:14px;">Strategic projects for <span id="lead-tz-label">EST</span>. IMs from any time zone may collaborate (0–6 contributors per project; lead is separate).</p>
+
+      <div class="lead-roster-section">
+        <div class="section-header lead-roster-section-title">Territory Project Leads</div>
+        <p class="lead-form-hint lead-roster-section-desc">Projects whose <strong>lead</strong> is an IM in <span class="lead-tz-label-inline">EST</span> — all contributors are listed (any region, not bolded).</p>
+        <table class="projects-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Lead</th>
+              <th>Role</th>
+              <th>Type</th>
+              <th>Complexity</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Contributors</th>
+              <th>Sponsor</th>
+              <th>Total Points</th>
+              <th class="col-edit" aria-label="Edit"></th>
+            </tr>
+          </thead>
+          <tbody id="lead-project-roster-leads-body"></tbody>
+        </table>
+      </div>
+
+      <div class="lead-roster-section lead-roster-section--by-im">
+        <div class="section-header lead-roster-section-title">Projects by <span class="lead-tz-label-inline">EST</span> IM</div>
+        <p class="lead-form-hint lead-roster-section-desc">Each <span class="lead-tz-label-inline">EST</span> IM — projects they <strong>lead</strong> or <strong>contribute</strong> to. Click a name to expand or collapse.</p>
+        <div class="controls lead-im-project-controls">
+          <div class="control-group">
+            <span class="eyebrow" style="margin-right: 8px;">Sort by:</span>
+            <button id="lead-im-sort-tier" type="button" class="btn-action btn-sort active-sort" onclick="LeadView.setImProjectSort()">Tier ↑↓</button>
+          </div>
+          <span id="lead-im-sort-hint" class="lead-form-hint lead-im-sort-hint">Highest tier first</span>
+        </div>
+        <div id="lead-im-project-sections"></div>
+      </div>
+    </div>
+
+    <div id="lead-proj-panel-mine" class="lead-project-panel">
+      <div class="section-header">My Projects</div>
+      <p class="lead-form-hint" style="margin-top:-8px; margin-bottom:14px;">Projects assigned to <span id="lead-persona-label">Alex Rivers</span> (visible after start date).</p>
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Role</th>
+            <th>Type</th>
+            <th>Complexity</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Total Points</th>
+          </tr>
+        </thead>
+        <tbody id="lead-my-projects-body"></tbody>
+      </table>
+    </div>
+
+    <div id="lead-proj-panel-new" class="lead-project-panel">
+      <div class="section-header">New Project</div>
+      <form id="lead-new-project-form" class="lead-new-project-form" onsubmit="LeadView.submitNewProject(event)">
+        <div class="lead-form-field">
+          <label for="np-name">Project name</label>
+          <input type="text" id="np-name" required placeholder="e.g. District Communications Rollout">
+        </div>
+        <div class="lead-form-field">
+          <label for="np-lead">Project lead</label>
+          <select id="np-lead" required onchange="LeadView.onNewProjectLeadChange()"></select>
+          <p class="lead-form-hint"><span id="lead-tz-hint">EST</span> territory — <strong>Tier 3+</strong> only (T1/T2 cannot lead).</p>
+        </div>
+        <div class="lead-form-field">
+          <label for="np-contributors">IMs working on the project</label>
+          <div class="lead-contrib-picker">
+            <div class="lead-contrib-picker-row">
+              <select id="np-contributors"></select>
+              <button type="button" class="btn-action" id="np-contrib-add" onclick="LeadView.addProjectContributor()">Add</button>
+            </div>
+            <ul id="np-contributors-list" class="lead-contrib-list" aria-live="polite"></ul>
+          </div>
+          <p class="lead-form-hint" id="np-contrib-hint">Select one IM at a time — up to <strong>6</strong> contributors (<strong>Tier 2+</strong>; T1 excluded). All regions.</p>
+        </div>
+        <div class="lead-form-row">
+          <div class="lead-form-field">
+            <label for="np-type">Type of project</label>
+            <select id="np-type" required>
+              <option value="Internal">Internal</option>
+              <option value="Cross-Collaboration">Cross-Collaboration</option>
+            </select>
+          </div>
+          <div class="lead-form-field">
+            <label for="np-complexity">Complexity</label>
+            <select id="np-complexity" required>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div class="lead-form-field">
+          <label for="np-sponsor">Project sponsor</label>
+          <select id="np-sponsor" required></select>
+        </div>
+        <div class="lead-form-row">
+          <div class="lead-form-field">
+            <label for="np-start">Start date</label>
+            <input type="date" id="np-start" required>
+            <p class="lead-form-hint">When the project appears in each IC’s My Projects tab.</p>
+          </div>
+          <div class="lead-form-field">
+            <label for="np-end">End date</label>
+            <input type="date" id="np-end" required>
+          </div>
+        </div>
+        <p id="lead-form-success" class="lead-form-success">Project submitted and assigned to roster.</p>
+        <div class="lead-form-actions">
+          <button type="button" class="btn-action" onclick="LeadView.resetNewProjectForm()">Clear</button>
+          <button type="submit" class="btn-action active">Submit Project</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <div id="territory-display"></div>
+  <div id="project-edit-modal" class="modal-overlay">
+    <div class="modal modal--project-edit">
+      <h3 id="project-edit-modal-title" class="lead-project-edit-title">Edit project</h3>
+      <form id="lead-edit-project-form" class="lead-new-project-form lead-edit-project-form" onsubmit="LeadView.submitEditProject(event)">
+        <div class="lead-form-field">
+          <label for="ep-name">Project name</label>
+          <input type="text" id="ep-name" required>
+        </div>
+        <div class="lead-form-field">
+          <label for="ep-lead">Project lead</label>
+          <select id="ep-lead" required onchange="LeadView.onEditProjectLeadChange()"></select>
+          <p class="lead-form-hint"><span id="ep-tz-hint">EST</span> territory — <strong>Tier 3+</strong> only (T1/T2 cannot lead).</p>
+        </div>
+        <div class="lead-form-field">
+          <label for="ep-contributors">IMs working on the project</label>
+          <div class="lead-contrib-picker">
+            <div class="lead-contrib-picker-row">
+              <select id="ep-contributors"></select>
+              <button type="button" class="btn-action" id="ep-contrib-add" onclick="LeadView.addEditProjectContributor()">Add</button>
+            </div>
+            <ul id="ep-contributors-list" class="lead-contrib-list" aria-live="polite"></ul>
+          </div>
+          <p class="lead-form-hint" id="ep-contrib-hint">Select one IM at a time — up to <strong>6</strong> contributors.</p>
+        </div>
+        <div class="lead-form-row">
+          <div class="lead-form-field">
+            <label for="ep-type">Type of project</label>
+            <select id="ep-type" required>
+              <option value="Internal">Internal</option>
+              <option value="Cross-Collaboration">Cross-Collaboration</option>
+            </select>
+          </div>
+          <div class="lead-form-field">
+            <label for="ep-complexity">Complexity</label>
+            <select id="ep-complexity" required>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div class="lead-form-field">
+          <label for="ep-sponsor">Project sponsor</label>
+          <select id="ep-sponsor" required></select>
+        </div>
+        <div class="lead-form-row">
+          <div class="lead-form-field">
+            <label for="ep-start">Start date</label>
+            <input type="date" id="ep-start" required>
+          </div>
+          <div class="lead-form-field">
+            <label for="ep-end">End date</label>
+            <input type="date" id="ep-end" required>
+          </div>
+        </div>
+        <div class="lead-form-actions">
+          <button type="button" class="btn-action" onclick="LeadView.closeEditProjectModal()">Cancel</button>
+          <button type="submit" class="btn-action active">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="note-modal" class="modal-overlay">
     <div class="modal">

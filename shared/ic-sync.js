@@ -51,6 +51,18 @@ var ICSync = (function () {
     return ROLE_PTS[p.role] + TYPE_PTS[p.type] + COMP_PTS[p.complexity];
   }
 
+  function formatProjectRoleLabel(role) {
+    return role + " (" + ROLE_PTS[role] + ")";
+  }
+
+  function formatProjectTypeLabel(type) {
+    return type + " (" + TYPE_PTS[type] + ")";
+  }
+
+  function formatProjectComplexityLabel(complexity) {
+    return complexity + " (" + COMP_PTS[complexity] + ")";
+  }
+
   function nameHash(str) {
     var h = 0;
     for (var i = 0; i < str.length; i++) {
@@ -405,7 +417,14 @@ var ICSync = (function () {
     var deals = needsDealReseed(im, roster, imIndex)
       ? buildDealsForIM(personaName, imIndex, count)
       : JSON.parse(JSON.stringify(im.icDeals));
-    var projects = ensureICProjects(im);
+    var projects =
+      im.icProjects && im.icProjects.length
+        ? JSON.parse(JSON.stringify(im.icProjects))
+        : ensureICProjects(im);
+    if (typeof ProjectsData !== "undefined" && ProjectsData.getProjectsForIM) {
+      var synced = ProjectsData.getProjectsForIM(ProjectsData.loadOrgProjects(), personaName);
+      if (synced.length) projects = synced;
+    }
     syncAggregates(im, deals, projects);
     return { im: im, deals: deals, projects: projects };
   }
@@ -429,6 +448,9 @@ var ICSync = (function () {
     TYPE_PTS: TYPE_PTS,
     COMP_PTS: COMP_PTS,
     calculateProjectPoints: calculateProjectPoints,
+    formatProjectRoleLabel: formatProjectRoleLabel,
+    formatProjectTypeLabel: formatProjectTypeLabel,
+    formatProjectComplexityLabel: formatProjectComplexityLabel,
     buildDealsForIM: buildDealsForIM,
     buildDealCountMap: buildDealCountMap,
     dealCountForIM: dealCountForIM,

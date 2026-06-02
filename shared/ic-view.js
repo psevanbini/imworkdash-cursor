@@ -115,10 +115,6 @@
     today.setHours(0, 0, 0, 0);
     var twoWeeks = new Date();
     twoWeeks.setDate(today.getDate() + 14);
-    var ROLE_PTS = ICSync.ROLE_PTS;
-    var TYPE_PTS = ICSync.TYPE_PTS;
-    var COMP_PTS = ICSync.COMP_PTS;
-
     body.innerHTML = myProjects.map(function (p) {
       var parts = p.endDate.split("/");
       var end = new Date(parts[2], parts[0] - 1, parts[1]);
@@ -128,9 +124,10 @@
       var pts = ICSync.calculateProjectPoints(p);
       return (
         "<tr><td><strong>" + p.name + "</strong></td>" +
-        "<td>" + p.role + " (" + ROLE_PTS[p.role] + ")</td>" +
-        "<td>" + p.type + " (" + TYPE_PTS[p.type] + ")</td>" +
-        "<td>" + p.complexity + " (" + COMP_PTS[p.complexity] + ")</td>" +
+        "<td>" + ICSync.formatProjectRoleLabel(p.role) + "</td>" +
+        "<td>" + ICSync.formatProjectTypeLabel(p.type) + "</td>" +
+        "<td>" + ICSync.formatProjectComplexityLabel(p.complexity) + "</td>" +
+        "<td>" + (p.startDate || "—") + "</td>" +
         '<td><span class="pill ' + dateClass + '">' + p.endDate + "</span></td>" +
         "<td><strong>" + pts + "</strong></td></tr>"
       );

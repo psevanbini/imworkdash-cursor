@@ -5,7 +5,10 @@
 var TeamData = (function () {
   var STORAGE_KEY = "imworkdash_team_v1";
   var IC_PERSONA = "Jordan Miller";
+  var LEAD_PERSONA = "Alex Rivers";
   var LEAD_TERRITORY_TZ = "EST";
+  /** Manager view — My Projects (project sponsor). */
+  var MANAGER_SPONSOR = "Morgan Tate — Implementation Manager";
 
   var MPC_VALUES = { T1: 200, T2: 225, T3: 250, T4: 250, T5: 100 };
 
@@ -116,12 +119,18 @@ var TeamData = (function () {
     return queue;
   }
 
-  function saveAll(roster, dealQueue) {
+  function saveAll(roster, dealQueue, orgProjects) {
     try {
-      var payload = JSON.stringify({
+      var snap = loadSnapshot();
+      var data = {
         roster: roster,
         dealQueue: dealQueue || cloneDealQueue()
-      });
+      };
+      if (orgProjects != null) data.orgProjects = orgProjects;
+      else if (snap && Array.isArray(snap.orgProjects)) data.orgProjects = snap.orgProjects;
+      if (snap && snap.orgProjectsSchema != null) data.orgProjectsSchema = snap.orgProjectsSchema;
+      if (snap && snap.notes) data.notes = snap.notes;
+      var payload = JSON.stringify(data);
       if (localStorage.getItem(STORAGE_KEY) === payload) return;
       localStorage.setItem(STORAGE_KEY, payload);
     } catch (e) { /* quota */ }
@@ -185,6 +194,10 @@ var TeamData = (function () {
     if (typeof ICSync !== "undefined" && ICSync.seedRosterDeals) {
       if (ICSync.seedRosterDeals(roster)) saveRoster(roster);
     }
+    if (typeof ProjectsData !== "undefined" && ProjectsData.initAndApply) {
+      ProjectsData.initAndApply(roster);
+      saveRoster(roster);
+    }
     return roster;
   }
 
@@ -192,7 +205,9 @@ var TeamData = (function () {
     STORAGE_KEY: STORAGE_KEY,
     MPC_VALUES: MPC_VALUES,
     IC_PERSONA: IC_PERSONA,
+    LEAD_PERSONA: LEAD_PERSONA,
     LEAD_TERRITORY_TZ: LEAD_TERRITORY_TZ,
+    MANAGER_SPONSOR: MANAGER_SPONSOR,
     cloneRoster: cloneRoster,
     cloneDealQueue: cloneDealQueue,
     loadRoster: loadRoster,
