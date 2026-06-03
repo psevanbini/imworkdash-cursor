@@ -37,9 +37,15 @@ function switchSubTab(tab) {
     document.querySelectorAll('.main-sub-tabs .sub-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('view-' + tab).style.display = 'block';
     document.getElementById('tab-' + tab).classList.add('active');
-    if (tab === 'assignment') switchAssignmentSubTab(currentAssignmentSubTab);
-    if (tab === 'reporting') renderReportingIfActive();
-    renderContent();
+    if (tab === 'assignment') {
+        switchAssignmentSubTab(currentAssignmentSubTab);
+        renderContent();
+    } else if (tab === 'reporting') {
+        updateMetrics();
+        renderReportingIfActive();
+    } else {
+        renderContent();
+    }
 }
 
 function switchAssignmentSubTab(tab) {
@@ -137,9 +143,11 @@ function getReportingContext() {
 }
 
 function renderReportingIfActive() {
-    if (document.getElementById('tab-reporting').classList.contains('active')) {
-        ManagerReporting.render(getReportingContext());
+    if (!document.getElementById('tab-reporting').classList.contains('active')) return;
+    if (typeof ICSync !== 'undefined' && ICSync.seedRosterDeals(teamData)) {
+        saveManagerState();
     }
+    ManagerReporting.render(getReportingContext());
 }
 
 function businessDaysSince(dateStr) {
@@ -249,11 +257,11 @@ function openRotationRemovalModal() {
     document.getElementById('rotation-other-text').value = '';
     document.getElementById('rotation-modal-return-date').value = '';
     toggleRotationOtherNotes();
-    document.getElementById('rotation-removal-modal').style.display = 'flex';
+    showModal('rotation-removal-modal');
 }
 
 function closeRotationRemovalModal() {
-    document.getElementById('rotation-removal-modal').style.display = 'none';
+    hideModal('rotation-removal-modal');
 }
 
 function toggleRotationOtherNotes() {
@@ -419,9 +427,20 @@ function updateQAdj(id, opt) {
 }
 
 function updateMetrics() {
-    let tdP=0, tpP=0, tM=0, spC=0, pdC=0, yR=0, rR=0, dC=0;
+    let tdP=0, tpP=0, tM=0, pdC=0, yR=0, rR=0, dC=0;
     const filtered = currentTZ === 'all' ? teamData : teamData.filter(im => im.tz === currentTZ);
-    filtered.forEach(im => { tdP+=im.dealPts; tpP+=im.projPts; tM+=MPC_VALUES[im.tier]; spC+=im.projects; pdC+=im.pd; yR+=im.y; rR+=im.r; dC+=im.deals; });
+    filtered.forEach(im => { tdP+=im.dealPts; tpP+=im.projPts; tM+=MPC_VALUES[im.tier]; pdC+=im.pd; yR+=im.y; rR+=im.r; dC+=im.deals; });
+    let spC = 0;
+    if (typeof ProjectsData !== 'undefined' && ProjectsData.loadOrgProjects && ProjectsData.countRegionalProjects) {
+        const orgProjects = ProjectsData.loadOrgProjects();
+        if (currentTZ === 'all') {
+            spC = orgProjects.length;
+        } else {
+            spC = ProjectsData.countRegionalProjects(orgProjects, currentTZ, teamData);
+        }
+    } else {
+        filtered.forEach(im => { spC += im.projects; });
+    }
     const tot = tdP + tpP, cap = Math.round((tot/tM)*100);
     document.getElementById('t-im-count').innerText = filtered.length;
     document.getElementById('t-deal-count').innerText = dC;
@@ -488,15 +507,29 @@ function renderRoster() {
     });
 }
 
+function showModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'flex';
+    el.classList.add('is-open');
+}
+
+function hideModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+    el.classList.remove('is-open');
+}
+
 function openNoteModal(name) {
     editingIM = name;
     document.getElementById('modal-im-name').innerText = `Notes for ${name}`;
     document.getElementById('note-text').value = TeamData.getNote(name);
-    document.getElementById('note-modal').style.display = 'flex';
+    showModal('note-modal');
 }
 
 function closeNoteModal() {
-    document.getElementById('note-modal').style.display = 'none';
+    hideModal('note-modal');
 }
 
 function saveNote() {
@@ -521,6 +554,18 @@ normalizeAllEligibility();
 updateMetrics();
 renderContent();
 
+function bindManagerModals() {
+    ['note-modal', 'rotation-removal-modal'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.backdropBound) return;
+        el.dataset.backdropBound = '1';
+        el.addEventListener('click', function (e) {
+            if (e.target === el) hideModal(id);
+        });
+    });
+}
+
 ManagerReporting.init(getReportingContext);
+bindManagerModals();
 
 IMWorkdashViewSync.onTeamDataUpdated(reloadFromSharedStore);

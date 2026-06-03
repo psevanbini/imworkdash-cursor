@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="shared/brand.css">
   <link rel="stylesheet" href="shared/dashboard.css">
   <link rel="stylesheet" href="shared/embed.css">
+  <link rel="stylesheet" href="shared/points-legend.css">
   <link rel="stylesheet" href="shared/lead-view.css">
   <script src="shared/embed.js"></script>
   <script src="shared/metrics-format.js"></script>
@@ -168,6 +169,11 @@
           </div>
           <p class="lead-form-hint" id="np-contrib-hint">Select one IM at a time — up to <strong>6</strong> contributors (<strong>Tier 2+</strong>; T1 excluded). All regions.</p>
         </div>
+        <div class="lead-form-field">
+          <label for="np-total-contributors">Total contributors (all teams)</label>
+          <input type="number" id="np-total-contributors" min="0" step="1" value="0" required>
+          <p class="lead-form-hint">Org-wide headcount for contributor-scope points (must be ≥ listed IMs above).</p>
+        </div>
         <div class="lead-form-row">
           <div class="lead-form-field">
             <label for="np-type">Type of project</label>
@@ -233,6 +239,11 @@
           </div>
           <p class="lead-form-hint" id="ep-contrib-hint">Select one IM at a time — up to <strong>6</strong> contributors.</p>
         </div>
+        <div class="lead-form-field">
+          <label for="ep-total-contributors">Total contributors (all teams)</label>
+          <input type="number" id="ep-total-contributors" min="0" step="1" value="0" required>
+          <p class="lead-form-hint">Org-wide headcount for contributor-scope points (must be ≥ listed IMs above).</p>
+        </div>
         <div class="lead-form-row">
           <div class="lead-form-field">
             <label for="ep-type">Type of project</label>
@@ -286,6 +297,7 @@
   <footer>© 2026 ParentSquare • Implementation Team Lead Dashboard</footer>
 </div>
 
+<script src="shared/points-legend.js"></script>
 <script src="shared/lead-view.js"></script>
 </body>
 </html>

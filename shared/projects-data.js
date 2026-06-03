@@ -5,7 +5,7 @@ var ProjectsData = (function () {
   /** Max IM contributors per project (lead is separate). */
   var MAX_PROJECT_CONTRIBUTORS = 6;
   /** Bump to reseed demo projects (cross-TZ leads / contributors). */
-  var ORG_PROJECTS_SCHEMA = 4;
+  var ORG_PROJECTS_SCHEMA = 5;
 
   var PROJECT_SPONSORS = [
     "Dr. Riley Hampton — Director of Implementation",
@@ -26,7 +26,8 @@ var ProjectsData = (function () {
       complexity: "Medium",
       sponsor: "Morgan Tate — Implementation Manager",
       startDate: "01/01/2026",
-      endDate: "03/10/2026"
+      endDate: "03/10/2026",
+      totalContributors: 4
     },
     {
       id: 2,
@@ -36,6 +37,7 @@ var ProjectsData = (function () {
         "Emerson True", "Stevie Lynn", "Jamie Frost",
         "Quinn Jones", "Parker Jade", "River Pond"
       ],
+      totalContributors: 8,
       type: "Cross-Collaboration",
       complexity: "Hard",
       sponsor: "Harper Lane — Team Lead (EST)",
@@ -51,7 +53,8 @@ var ProjectsData = (function () {
       complexity: "Easy",
       sponsor: "Dr. Riley Hampton — Director of Implementation",
       startDate: "03/15/2026",
-      endDate: "09/30/2026"
+      endDate: "09/30/2026",
+      totalContributors: 1
     },
     {
       id: 4,
@@ -62,7 +65,8 @@ var ProjectsData = (function () {
       complexity: "Hard",
       sponsor: "Samira Okonkwo — Implementation Manager",
       startDate: "01/10/2026",
-      endDate: "06/30/2026"
+      endDate: "06/30/2026",
+      totalContributors: 3
     },
     {
       id: 5,
@@ -76,7 +80,8 @@ var ProjectsData = (function () {
       complexity: "Medium",
       sponsor: "Dr. Riley Hampton — Director of Implementation",
       startDate: "02/15/2026",
-      endDate: "11/01/2026"
+      endDate: "11/01/2026",
+      totalContributors: 6
     },
     {
       id: 6,
@@ -87,7 +92,8 @@ var ProjectsData = (function () {
       complexity: "Hard",
       sponsor: "Samira Okonkwo — Implementation Manager",
       startDate: "01/15/2026",
-      endDate: "04/05/2026"
+      endDate: "04/05/2026",
+      totalContributors: 2
     },
     {
       id: 7,
@@ -101,9 +107,18 @@ var ProjectsData = (function () {
       complexity: "Medium",
       sponsor: "Morgan Tate — Implementation Manager",
       startDate: "03/01/2026",
-      endDate: "12/15/2026"
+      endDate: "12/15/2026",
+      totalContributors: 9
     }
   ];
+
+  function normalizeTotalContributors(value, contributors) {
+    var imCount = (contributors || []).length;
+    var n = parseInt(value, 10);
+    if (isNaN(n) || n < 0) n = imCount;
+    if (n < imCount) n = imCount;
+    return n;
+  }
 
   function cloneDefaults() {
     return JSON.parse(JSON.stringify(DEFAULT_ORG_PROJECTS));
@@ -202,6 +217,11 @@ var ProjectsData = (function () {
       var prev = p.contributors || [];
       if (clean.length !== prev.length || clean.some(function (n, i) { return n !== prev[i]; })) {
         p.contributors = clean;
+        changed = true;
+      }
+      var normalizedTotal = normalizeTotalContributors(p.totalContributors, p.contributors);
+      if (p.totalContributors !== normalizedTotal) {
+        p.totalContributors = normalizedTotal;
         changed = true;
       }
     });
@@ -318,6 +338,7 @@ var ProjectsData = (function () {
       role: project.lead === imName ? "Lead" : "Contributor",
       type: project.type,
       complexity: project.complexity,
+      totalContributors: project.totalContributors,
       startDate: project.startDate,
       endDate: project.endDate,
       orgProjectId: project.id
@@ -331,7 +352,11 @@ var ProjectsData = (function () {
     var ROLE_PTS = { Lead: 3, Contributor: 1 };
     var TYPE_PTS = { Internal: 1, "Cross-Collaboration": 2 };
     var COMP_PTS = { Easy: 1, Medium: 2, Hard: 3 };
-    return ROLE_PTS[p.role] + TYPE_PTS[p.type] + COMP_PTS[p.complexity];
+    var scope =
+      typeof ICSync !== "undefined" && ICSync.contributorScopePoints
+        ? ICSync.contributorScopePoints(p.totalContributors)
+        : 1;
+    return ROLE_PTS[p.role] + TYPE_PTS[p.type] + COMP_PTS[p.complexity] + scope;
   }
 
   function applyToRoster(roster, projects) {
@@ -430,6 +455,7 @@ var ProjectsData = (function () {
       name: fields.name.trim(),
       lead: fields.lead,
       contributors: contributors,
+      totalContributors: normalizeTotalContributors(fields.totalContributors, contributors),
       type: fields.type,
       complexity: fields.complexity,
       sponsor: fields.sponsor || "",
@@ -454,6 +480,10 @@ var ProjectsData = (function () {
     project.name = fields.name.trim();
     project.lead = fields.lead;
     project.contributors = sanitizeContributors(fields.contributors, fields.lead, roster);
+    project.totalContributors = normalizeTotalContributors(
+      fields.totalContributors,
+      project.contributors
+    );
     project.type = fields.type;
     project.complexity = fields.complexity;
     project.sponsor = fields.sponsor || "";
@@ -476,6 +506,7 @@ var ProjectsData = (function () {
     canIMBeProjectLead: canIMBeProjectLead,
     canIMBeProjectContributor: canIMBeProjectContributor,
     sanitizeContributors: sanitizeContributors,
+    normalizeTotalContributors: normalizeTotalContributors,
     PROJECT_SPONSORS: PROJECT_SPONSORS,
     loadOrgProjects: loadOrgProjects,
     saveOrgProjects: saveOrgProjects,

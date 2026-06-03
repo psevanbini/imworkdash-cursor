@@ -1,0 +1,122 @@
+/* Shared collapsible point key — same placement on IC, Lead, and Manager pages */
+.points-legend-wrap {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--psq-border);
+  text-align: center;
+}
+
+.points-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--psq-blue-dark);
+}
+
+.points-legend-toggle::after {
+  content: "▾";
+  font-size: 10px;
+  color: var(--psq-muted);
+  transition: transform 0.15s ease;
+}
+
+.points-legend-wrap.is-open .points-legend-toggle::after {
+  transform: rotate(180deg);
+}
+
+.points-legend-panel {
+  display: none;
+  margin-top: 16px;
+  padding: 20px 22px;
+  background: var(--psq-surface);
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.points-legend-wrap.is-open .points-legend-panel {
+  display: block;
+}
+
+.points-legend-intro {
+  font-size: 12px;
+  color: var(--psq-muted);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.points-legend-section {
+  margin-bottom: 20px;
+}
+
+.points-legend-section:last-child {
+  margin-bottom: 0;
+}
+
+.points-legend-section h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--psq-green-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.points-legend-formula {
+  font-size: 11px;
+  color: var(--psq-blue-dark);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.points-legend-note {
+  font-size: 11px;
+  color: var(--psq-muted);
+  margin: 0 0 12px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.points-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.points-legend-table th,
+.points-legend-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--psq-border);
+  text-align: left;
+}
+
+.points-legend-table th {
+  font-weight: 600;
+  color: var(--psq-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.points-legend-table th:last-child,
+.points-legend-table td:last-child {
+  text-align: right;
+}
+
+.points-legend-table td:last-child {
+  font-weight: 600;
+  color: var(--psq-blue-dark);
+  white-space: nowrap;
+}
+
+.points-legend-table tr:last-child th,
+.points-legend-table tr:last-child td {
+  border-bottom: none;
+}

@@ -200,13 +200,18 @@
     return "lead-im-proj-" + imName.replace(/[^a-zA-Z0-9]+/g, "-");
   }
 
+  function projectPointPayload(p, role) {
+    return {
+      role: role,
+      type: p.type,
+      complexity: p.complexity,
+      totalContributors: p.totalContributors
+    };
+  }
+
   function projectRowHtml(p, byName, showEdit) {
     var roleLabel = ICSync.formatProjectRoleLabel("Lead");
-    var pts = ICSync.calculateProjectPoints({
-      role: "Lead",
-      type: p.type,
-      complexity: p.complexity
-    });
+    var pts = ICSync.calculateProjectPoints(projectPointPayload(p, "Lead"));
     var contrib = formatContributorsCell(p.contributors || [], byName, false);
     var editCell = showEdit
       ? '<td class="col-edit"><span class="edit-btn" title="Edit project" ' +
@@ -232,11 +237,7 @@
   function imProjectPointsFor(p, imName) {
     var role = ProjectsData.imRoleOnProject(p, imName);
     if (!role) return 0;
-    return ICSync.calculateProjectPoints({
-      role: role,
-      type: p.type,
-      complexity: p.complexity
-    });
+    return ICSync.calculateProjectPoints(projectPointPayload(p, role));
   }
 
   function totalImProjectPoints(projects, imName) {
@@ -410,6 +411,8 @@
         return '<option value="' + escapeAttr(s) + '">' + escapeHtml(s) + "</option>";
       }).join("");
     CONTRIBUTOR_PICKER.new.setList([]);
+    var totalInput = document.getElementById("np-total-contributors");
+    if (totalInput) totalInput.value = "0";
     refreshContributorDropdown("new");
     renderContributorsList("new");
     updateContributorAddButton("new");
@@ -480,6 +483,11 @@
       hintEl.innerHTML =
         names.length + " of " + max + " — select one IM at a time (<strong>Tier 2+</strong>; T1 excluded). All regions.";
     }
+    var totalEl = document.getElementById(kind === "edit" ? "ep-total-contributors" : "np-total-contributors");
+    if (totalEl) {
+      var cur = parseInt(totalEl.value, 10);
+      if (isNaN(cur) || cur < names.length) totalEl.value = String(names.length);
+    }
   }
 
   function updateContributorAddButton(kind) {
@@ -528,6 +536,7 @@
     }
     list.push(name);
     cfg.setList(list);
+    syncTotalContributorsFromImList(kind);
     refreshContributorDropdown(kind);
     renderContributorsList(kind);
   }
@@ -536,8 +545,25 @@
     var cfg = CONTRIBUTOR_PICKER[kind];
     if (!cfg) return;
     cfg.setList(cfg.list().filter(function (n) { return n !== name; }));
+    syncTotalContributorsFromImList(kind);
     refreshContributorDropdown(kind);
     renderContributorsList(kind);
+  }
+
+  function totalContributorsInputId(kind) {
+    return (kind === "edit" ? "ep" : "np") + "-total-contributors";
+  }
+
+  function syncTotalContributorsFromImList(kind) {
+    var cfg = CONTRIBUTOR_PICKER[kind];
+    if (!cfg) return;
+    var input = document.getElementById(totalContributorsInputId(kind));
+    if (!input) return;
+    var imCount = cfg.list().length;
+    var current = parseInt(input.value, 10);
+    if (isNaN(current) || current < imCount) {
+      input.value = String(imCount);
+    }
   }
 
   function onNewProjectLeadChange() {
@@ -564,13 +590,21 @@
     removeProjectContributorFor("edit", name);
   }
 
+  function readTotalContributors(kind, contributorCount) {
+    var el = document.getElementById((kind === "edit" ? "ep" : "np") + "-total-contributors");
+    if (!el || el.value === "") return String(Math.max(contributorCount, 0));
+    return el.value;
+  }
+
   function collectProjectFormFields(kind) {
     var prefix = kind === "edit" ? "ep" : "np";
     var cfg = CONTRIBUTOR_PICKER[kind];
+    var contributors = cfg.list().slice();
     return {
       name: document.getElementById(prefix + "-name").value.trim(),
       lead: document.getElementById(prefix + "-lead").value,
-      contributors: cfg.list().slice(),
+      contributors: contributors,
+      totalContributors: readTotalContributors(kind, contributors.length),
       type: document.getElementById(prefix + "-type").value,
       complexity: document.getElementById(prefix + "-complexity").value,
       sponsor: document.getElementById(prefix + "-sponsor").value,
@@ -607,6 +641,19 @@
       return false;
     }
     fields.contributors = contributors;
+    var total = parseInt(fields.totalContributors, 10);
+    if (isNaN(total) || total < 0) {
+      alert("Enter total contributors (all teams), zero or more.");
+      return false;
+    }
+    if (total < contributors.length) {
+      alert(
+        "Total contributors cannot be less than the number of IMs listed (" +
+        contributors.length + ")."
+      );
+      return false;
+    }
+    fields.totalContributors = total;
     return true;
   }
 
@@ -633,15 +680,23 @@
     document.getElementById("ep-start").value = ProjectsData.inputFromMdy(project.startDate);
     document.getElementById("ep-end").value = ProjectsData.inputFromMdy(project.endDate);
     CONTRIBUTOR_PICKER.edit.setList((project.contributors || []).slice());
+    var totalEl = document.getElementById("ep-total-contributors");
+    if (totalEl) {
+      totalEl.value = String(
+        project.totalContributors != null
+          ? project.totalContributors
+          : (project.contributors || []).length
+      );
+    }
     refreshContributorDropdown("edit");
     renderContributorsList("edit");
     document.getElementById("project-edit-modal-title").textContent = "Edit project — " + project.name;
-    document.getElementById("project-edit-modal").style.display = "flex";
+    showModal("project-edit-modal");
   }
 
   function closeEditProjectModal() {
     editingProjectId = null;
-    document.getElementById("project-edit-modal").style.display = "none";
+    hideModal("project-edit-modal");
   }
 
   function submitEditProject(e) {
@@ -737,15 +792,40 @@
     renderRoster();
   }
 
+  function showModal(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = "flex";
+    el.classList.add("is-open");
+  }
+
+  function hideModal(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = "none";
+    el.classList.remove("is-open");
+  }
+
+  function bindLeadModals() {
+    ["note-modal", "project-edit-modal"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el || el.dataset.backdropBound) return;
+      el.dataset.backdropBound = "1";
+      el.addEventListener("click", function (e) {
+        if (e.target === el) hideModal(id);
+      });
+    });
+  }
+
   function openModal(name) {
     editingIM = name;
     document.getElementById("modal-im-name").innerText = "Notes for " + name;
     document.getElementById("note-text").value = TeamData.getNote(name);
-    document.getElementById("note-modal").style.display = "flex";
+    showModal("note-modal");
   }
 
   function closeModal() {
-    document.getElementById("note-modal").style.display = "none";
+    hideModal("note-modal");
   }
 
   function saveNote() {
@@ -778,6 +858,7 @@
     refresh: refresh
   };
 
+  bindLeadModals();
   refresh();
   IMWorkdashViewSync.onTeamDataUpdated(refresh);
 })();

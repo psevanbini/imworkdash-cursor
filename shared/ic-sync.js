@@ -25,11 +25,11 @@ var ICSync = (function () {
   };
   var HEALTH_PTS = { green: 0, yellow: 1, red: 2 };
   var STAGES = [
-    "Inbound", "Kickoff", "Setup", "Feature Enablement", "Platform Ready",
+    "Inbound", "Kickoff", "System Configuration", "Feature Enablement", "Platform Ready",
     "Monitor", "End of Implementation", "On Hold", "Stalled"
   ];
   var ACTIVE_STAGES = [
-    "Inbound", "Kickoff", "Setup", "Feature Enablement", "Platform Ready",
+    "Inbound", "Kickoff", "System Configuration", "Feature Enablement", "Platform Ready",
     "Monitor", "End of Implementation"
   ];
   var ROLE_PTS = { Lead: 3, Contributor: 1 };
@@ -47,8 +47,24 @@ var ICSync = (function () {
     "County Schools", "Parish Schools", "Magnet", "K-8", "High School District"
   ];
 
+  function contributorScopePoints(totalContributors) {
+    var n = Math.max(0, parseInt(totalContributors, 10) || 0);
+    if (n <= 2) return 1;
+    if (n <= 5) return 2;
+    return 3;
+  }
+
   function calculateProjectPoints(p) {
-    return ROLE_PTS[p.role] + TYPE_PTS[p.type] + COMP_PTS[p.complexity];
+    var total =
+      p.totalContributors != null
+        ? p.totalContributors
+        : (p.contributors ? p.contributors.length : 0);
+    return (
+      ROLE_PTS[p.role] +
+      TYPE_PTS[p.type] +
+      COMP_PTS[p.complexity] +
+      contributorScopePoints(total)
+    );
   }
 
   function formatProjectRoleLabel(role) {
@@ -184,7 +200,7 @@ var ICSync = (function () {
   }
 
   var IC_STAGE_ORDER = [
-    "Inbound", "Kickoff", "Setup", "Feature Enablement", "Platform Ready",
+    "Inbound", "Kickoff", "System Configuration", "Feature Enablement", "Platform Ready",
     "Monitor", "On Hold", "Stalled"
   ];
 
@@ -204,7 +220,7 @@ var ICSync = (function () {
     add("Monitor", 10);
     add("On Hold", 2);
     var remaining = Math.max(0, count - buckets.length);
-    var flexStages = ["Setup", "Feature Enablement", "Platform Ready"];
+    var flexStages = ["System Configuration", "Feature Enablement", "Platform Ready"];
     if (remaining > 0) {
       var base = Math.floor(remaining / flexStages.length);
       var rem = remaining % flexStages.length;
@@ -228,7 +244,7 @@ var ICSync = (function () {
       var n = tally[stage] || 0;
       for (var j = 0; j < n; j++) plan.push(stage);
     });
-    while (plan.length < count) plan.push("Setup");
+    while (plan.length < count) plan.push("System Configuration");
     return plan.slice(0, count);
   }
 
@@ -340,7 +356,19 @@ var ICSync = (function () {
     });
   }
 
+  function normalizeIcDeals(deals) {
+    var changed = false;
+    deals.forEach(function (d) {
+      if (d.stage === "Setup") {
+        d.stage = "System Configuration";
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
   function syncDealAggregates(im, deals) {
+    normalizeIcDeals(deals);
     var dealPts = 0;
     var y = 0;
     var r = 0;
@@ -396,13 +424,20 @@ var ICSync = (function () {
           ? buildDealsForIM(im.name, index, count)
           : JSON.parse(JSON.stringify(im.icDeals));
         var projects = ensureICProjects(im);
-        if (dealsReseed || icProjectsNeedMerge(im)) {
+        var stageMigrated = !dealsReseed && normalizeIcDeals(deals);
+        if (dealsReseed || icProjectsNeedMerge(im) || stageMigrated) {
           syncAggregates(im, deals, projects);
           changed = true;
         }
       } else if (dealsReseed) {
         syncDealAggregates(im, buildDealsForIM(im.name, index, count));
         changed = true;
+      } else if (im.icDeals && im.icDeals.length) {
+        var existingDeals = JSON.parse(JSON.stringify(im.icDeals));
+        if (normalizeIcDeals(existingDeals)) {
+          syncDealAggregates(im, existingDeals);
+          changed = true;
+        }
       }
     });
     return changed;
@@ -448,6 +483,7 @@ var ICSync = (function () {
     TYPE_PTS: TYPE_PTS,
     COMP_PTS: COMP_PTS,
     calculateProjectPoints: calculateProjectPoints,
+    contributorScopePoints: contributorScopePoints,
     formatProjectRoleLabel: formatProjectRoleLabel,
     formatProjectTypeLabel: formatProjectTypeLabel,
     formatProjectComplexityLabel: formatProjectComplexityLabel,

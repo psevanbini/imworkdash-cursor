@@ -499,6 +499,10 @@ tbody tr:nth-child(even) {
   width: fit-content;
 }
 
+.modal-overlay.is-open {
+  display: flex;
+}
+
 .modal-overlay {
   display: none;
   position: fixed;

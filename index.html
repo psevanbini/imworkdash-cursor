@@ -120,6 +120,17 @@
       const initial = keyFromHash() || select.value;
       select.value = initial;
       activate(initial);
+
+      window.addEventListener("message", function (e) {
+        if (!e.data || e.data.type !== "imworkdash-team-updated") return;
+        Object.keys(frames).forEach(function (key) {
+          var frame = frames[key];
+          if (!frame || !frame.contentWindow) return;
+          try {
+            frame.contentWindow.postMessage(e.data, "*");
+          } catch (err) { /* cross-origin or unloaded */ }
+        });
+      });
     })();
   </script>
 </body>

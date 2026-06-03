@@ -1,9 +1,9 @@
 /**
- * Manager Reporting tab — dynamic charts by region & date range, draggable layout.
+ * Manager Reporting tab — static charts by region & date range (no animation).
  */
 var ManagerReporting = (function () {
   var LAYOUT_KEY = "imworkdash_reporting_layout_v1";
-  var PREFS_KEY = "imworkdash_reporting_prefs_v1";
+  var PREFS_KEY = "imworkdash_reporting_prefs_v2";
 
   var WIDGETS = [
     { id: "deals-by-segment", title: "Deals by Segment Size", wide: true },
@@ -152,6 +152,16 @@ var ManagerReporting = (function () {
     var base = {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
+      animations: {
+        colors: false,
+        x: false,
+        y: false
+      },
+      transitions: {
+        active: { animation: { duration: 0 } },
+        resize: { animation: { duration: 0 } }
+      },
       plugins: {
         legend: { labels: { font: { family: "Inter", size: 11 }, boxWidth: 12 } }
       },
@@ -634,7 +644,7 @@ var ManagerReporting = (function () {
               borderColor: BRAND.orange,
               backgroundColor: BRAND.orange,
               yAxisID: "y",
-              tension: 0.2
+              tension: 0
             }
           ]
         },
@@ -674,7 +684,7 @@ var ManagerReporting = (function () {
               data: s.data,
               borderColor: color,
               backgroundColor: color,
-              tension: 0.3,
+              tension: 0,
               fill: false
             };
           })
@@ -765,7 +775,6 @@ var ManagerReporting = (function () {
       '<article class="report-widget' + (widget.wide ? " report-widget--wide" : "") +
         (collapsed ? " report-widget--collapsed" : "") + '" data-widget-id="' + widget.id + '">' +
         '<div class="report-widget-head">' +
-          '<span class="report-drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⠿</span>' +
           '<button type="button" class="report-collapse-btn" data-widget-id="' + widget.id + '" ' +
             'title="' + (collapsed ? "Expand chart" : "Collapse chart") + '" aria-expanded="' + !collapsed + '">' +
             (collapsed ? "▶" : "▼") + "</button>" +
@@ -795,22 +804,17 @@ var ManagerReporting = (function () {
     });
   }
 
-  function bindCollapseToggles(container) {
-    container.querySelectorAll(".report-collapse-btn").forEach(function (btn) {
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var id = btn.getAttribute("data-widget-id");
-        collapsedWidgets[id] = !collapsedWidgets[id];
-        var prefs = loadPrefs() || {};
-        prefs.collapsedWidgets = collapsedWidgets;
-        savePrefs(prefs);
-        applyCollapsedState(container);
-        if (!collapsedWidgets[id]) {
-          var chartKey = "chart-" + id;
-          if (chartInstances[chartKey]) chartInstances[chartKey].resize();
-        }
-      });
-    });
+  function handleCollapseToggle(btn, container) {
+    var id = btn.getAttribute("data-widget-id");
+    collapsedWidgets[id] = !collapsedWidgets[id];
+    var prefs = loadPrefs() || {};
+    prefs.collapsedWidgets = collapsedWidgets;
+    savePrefs(prefs);
+    applyCollapsedState(container);
+    if (!collapsedWidgets[id]) {
+      var chartKey = "chart-" + id;
+      if (chartInstances[chartKey]) chartInstances[chartKey].resize();
+    }
   }
 
   function buildChartVisibilityPanel() {
@@ -1016,75 +1020,83 @@ var ManagerReporting = (function () {
     });
   }
 
-  function bindPointToggles(container) {
-    container.querySelectorAll(".report-pts-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        pointsMode = btn.getAttribute("data-pts-mode");
+  function refreshRotationRemovalsChart(container) {
+    if (!lastMetrics) return;
+    container.querySelectorAll(".report-reason-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-reason-filter") === removalReasonFilter);
+    });
+    if (chartInstances["chart-rotation-removals"]) {
+      chartInstances["chart-rotation-removals"].destroy();
+      delete chartInstances["chart-rotation-removals"];
+    }
+    var removalReasons = removalReasonFilter === "all"
+      ? ReportingData.REMOVAL_REASONS
+      : ReportingData.REMOVAL_REASONS.filter(function (r) { return r === removalReasonFilter; });
+    makeBarChart("chart-rotation-removals", {
+      data: {
+        labels: lastMetrics.labels,
+        datasets: removalReasons.map(function (reason) {
+          return {
+            label: reason,
+            data: lastMetrics.removalsByReason[reason],
+            backgroundColor: REASON_COLORS[reason],
+            stack: removalReasonFilter === "all" ? "removals" : "removals-single"
+          };
+        })
+      },
+      options: {
+        scales: {
+          x: { stacked: removalReasonFilter === "all" },
+          y: {
+            stacked: removalReasonFilter === "all",
+            title: { display: true, text: "Removals" }
+          }
+        }
+      }
+    });
+  }
+
+  function bindReportingPanelDelegation(contextProvider) {
+    var panel = document.getElementById("view-reporting");
+    if (!panel || panel.dataset.delegationBound) return;
+    panel.dataset.delegationBound = "1";
+    panel.addEventListener("click", function (e) {
+      var dashboard = document.getElementById("reporting-dashboard");
+      var ptsBtn = e.target.closest(".report-pts-btn");
+      if (ptsBtn) {
+        pointsMode = ptsBtn.getAttribute("data-pts-mode");
         var prefs = loadPrefs() || {};
         prefs.pointsMode = pointsMode;
         savePrefs(prefs);
         if (lastContext) render(lastContext);
-      });
-    });
-  }
-
-  function bindReasonFilters(container) {
-    container.querySelectorAll(".report-reason-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        removalReasonFilter = btn.getAttribute("data-reason-filter");
-        var prefs = loadPrefs() || {};
-        prefs.removalReasonFilter = removalReasonFilter;
-        savePrefs(prefs);
-        if (lastContext && lastMetrics) {
-          container.querySelectorAll(".report-reason-btn").forEach(function (b) {
-            b.classList.toggle("active", b.getAttribute("data-reason-filter") === removalReasonFilter);
-          });
-          if (chartInstances["chart-rotation-removals"]) {
-            chartInstances["chart-rotation-removals"].destroy();
-            delete chartInstances["chart-rotation-removals"];
-          }
-          var removalReasons = removalReasonFilter === "all"
-            ? ReportingData.REMOVAL_REASONS
-            : ReportingData.REMOVAL_REASONS.filter(function (r) { return r === removalReasonFilter; });
-          makeBarChart("chart-rotation-removals", {
-            data: {
-              labels: lastMetrics.labels,
-              datasets: removalReasons.map(function (reason) {
-                return {
-                  label: reason,
-                  data: lastMetrics.removalsByReason[reason],
-                  backgroundColor: REASON_COLORS[reason],
-                  stack: removalReasonFilter === "all" ? "removals" : "removals-single"
-                };
-              })
-            },
-            options: {
-              scales: {
-                x: { stacked: removalReasonFilter === "all" },
-                y: {
-                  stacked: removalReasonFilter === "all",
-                  title: { display: true, text: "Removals" }
-                }
-              }
-            }
-          });
-        }
-      });
-    });
-  }
-
-  function bindRegionMetricFilters(container) {
-    container.querySelectorAll(".report-region-metric-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        regionMetricFilter = btn.getAttribute("data-region-metric");
-        var prefs = loadPrefs() || {};
-        prefs.regionMetricFilter = regionMetricFilter;
-        savePrefs(prefs);
-        container.querySelectorAll(".report-region-metric-btn").forEach(function (b) {
+        return;
+      }
+      var reasonBtn = e.target.closest(".report-reason-btn");
+      if (reasonBtn && dashboard) {
+        removalReasonFilter = reasonBtn.getAttribute("data-reason-filter");
+        var prefsR = loadPrefs() || {};
+        prefsR.removalReasonFilter = removalReasonFilter;
+        savePrefs(prefsR);
+        refreshRotationRemovalsChart(dashboard);
+        return;
+      }
+      var regionBtn = e.target.closest(".report-region-metric-btn");
+      if (regionBtn && dashboard) {
+        regionMetricFilter = regionBtn.getAttribute("data-region-metric");
+        var prefsG = loadPrefs() || {};
+        prefsG.regionMetricFilter = regionMetricFilter;
+        savePrefs(prefsG);
+        dashboard.querySelectorAll(".report-region-metric-btn").forEach(function (b) {
           b.classList.toggle("active", b.getAttribute("data-region-metric") === regionMetricFilter);
         });
         if (lastMetrics) renderRegionRollupChart(lastMetrics);
-      });
+        return;
+      }
+      var collapseBtn = e.target.closest(".report-collapse-btn");
+      if (collapseBtn && dashboard) {
+        e.stopPropagation();
+        handleCollapseToggle(collapseBtn, dashboard);
+      }
     });
   }
 
@@ -1197,13 +1209,24 @@ var ManagerReporting = (function () {
     });
   }
 
+  function normalizeWidgetPrefs() {
+    var ids = WIDGETS.map(function (w) { return w.id; });
+    var hiddenCount = ids.filter(function (id) { return hiddenWidgets[id]; }).length;
+    if (hiddenCount >= ids.length - 1) {
+      hiddenWidgets = {};
+    }
+  }
+
   function render(context) {
     lastContext = context;
     var root = document.getElementById("reporting-dashboard");
     if (!root) return;
 
+    ReportingData.prepareRoster(context.team);
+
     var range = getRangeFromControls();
     range.tz = context.tz;
+    normalizeWidgetPrefs();
     saveDatePrefs();
 
     var ims = ReportingData.filterTeam(context.team, context.tz);
@@ -1232,16 +1255,19 @@ var ManagerReporting = (function () {
     }).join("");
 
     renderCharts(metrics);
-    bindPointerDrag(root);
-    bindPointToggles(root);
-    bindReasonFilters(root);
-    bindRegionMetricFilters(root);
-    bindCollapseToggles(root);
     applyCollapsedState(root);
+
+    if (!ims.length) {
+      root.insertAdjacentHTML(
+        "afterbegin",
+        '<p class="reporting-empty-msg">No IMs in this regional view. Switch to All Regions or another timezone.</p>'
+      );
+    }
   }
 
   function init(contextProvider) {
     initDateControls();
+    bindReportingPanelDelegation(contextProvider);
     bindDateControls(function () {
       render(contextProvider());
     });

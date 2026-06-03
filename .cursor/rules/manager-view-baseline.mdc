@@ -6,7 +6,12 @@ alwaysApply: false
 
 # Manager view baseline (5/29/26)
 
-Treat the **Manager view** as frozen at the **5/29/2026** codebase (`main` commit `1a3a23d` or later commits that do **not** change Manager files).
+Treat the **Manager view** as frozen at the **last commit on 5/29/2026** — `1a3a23d` (10:09), not the earlier `9f9a527` (10:02). Later commits may change shared data files; do **not** change Manager files unless the user asks.
+
+| 5/29 commit | Time | Manager impact |
+|-------------|------|----------------|
+| `9f9a527` | 10:02 | Tier deal books, rotation workflow, queue badges (`manager-view.js`, `ManagerView.html`) |
+| `1a3a23d` | 10:09 | Pink rotation alert cards (`manager-view.css`) — **baseline** |
 
 ## Do not re-apply (6/2/26 work — rejected)
 

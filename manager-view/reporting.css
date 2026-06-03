@@ -280,3 +280,14 @@ body.report-is-dragging .report-chart-wrap canvas {
     grid-column: auto;
   }
 }
+
+.reporting-empty-msg {
+  grid-column: 1 / -1;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--psq-muted);
+  background: var(--psq-blue-01, #f5faff);
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-md);
+}
