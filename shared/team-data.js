@@ -4,6 +4,10 @@
  */
 var TeamData = (function () {
   var STORAGE_KEY = "imworkdash_team_v1";
+  var TS_KEY = STORAGE_KEY + "_ts";
+  var SEED_SCHEMA_KEY = "imworkdash_seed_schema_v";
+  var NOTIFY_DEBOUNCE_MS = 250;
+
   var IC_PERSONA = "Jordan Miller";
   var LEAD_PERSONA = "Alex Rivers";
   var LEAD_TERRITORY_TZ = "EST";
@@ -11,6 +15,16 @@ var TeamData = (function () {
   var MANAGER_SPONSOR = "Morgan Tate — Implementation Manager";
 
   var MPC_VALUES = { T1: 200, T2: 225, T3: 250, T4: 250, T5: 100 };
+
+  var cache = {
+    ts: null,
+    snapRaw: null,
+    roster: null,
+    dealQueue: null
+  };
+
+  var notifyTimer = null;
+  var notesMigrated = false;
 
   var DEFAULT_ROSTER = [
     { name: "Alex Rivers", tz: "EST", tier: "T4", dealPts: 65, projPts: 15, deals: 10, projects: 2, pd: 0, y: 1, r: 0, velocity: 2, med: true, lg: true, onRotation: true, reason: "" },
@@ -53,14 +67,45 @@ var TeamData = (function () {
     return JSON.parse(JSON.stringify(DEFAULT_DEAL_QUEUE));
   }
 
+  function deepCloneRoster(roster) {
+    return JSON.parse(JSON.stringify(roster));
+  }
+
+  function getStorageTs() {
+    return localStorage.getItem(TS_KEY) || "";
+  }
+
+  function getSnapRaw() {
+    return localStorage.getItem(STORAGE_KEY);
+  }
+
+  function invalidateCache() {
+    cache.ts = null;
+    cache.snapRaw = null;
+    cache.roster = null;
+    cache.dealQueue = null;
+  }
+
   function loadSnapshot() {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
+      var raw = getSnapRaw();
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (e) {
       return null;
     }
+  }
+
+  function mergeRosterFromSnap(roster, snap) {
+    if (!snap || !Array.isArray(snap.roster)) return roster;
+    snap.roster.forEach(function (saved) {
+      var im = roster.find(function (r) { return r.name === saved.name; });
+      if (!im) return;
+      Object.keys(saved).forEach(function (key) {
+        if (saved[key] !== undefined) im[key] = saved[key];
+      });
+    });
+    return roster;
   }
 
   /** One-time import from older manager-only storage key. */
@@ -92,21 +137,24 @@ var TeamData = (function () {
   }
 
   function loadRoster() {
-    var roster = cloneRoster();
-    var snap = loadSnapshot();
-    if (snap && Array.isArray(snap.roster)) {
-      snap.roster.forEach(function (saved) {
-        var im = roster.find(function (r) { return r.name === saved.name; });
-        if (!im) return;
-        Object.keys(saved).forEach(function (key) {
-          if (saved[key] !== undefined) im[key] = saved[key];
-        });
-      });
+    var ts = getStorageTs();
+    var raw = getSnapRaw();
+    if (cache.roster && cache.ts === ts && cache.snapRaw === raw) {
+      return deepCloneRoster(cache.roster);
     }
+    var roster = mergeRosterFromSnap(cloneRoster(), loadSnapshot());
+    cache.roster = deepCloneRoster(roster);
+    cache.ts = ts;
+    cache.snapRaw = raw;
     return roster;
   }
 
   function loadDealQueue() {
+    var ts = getStorageTs();
+    var raw = getSnapRaw();
+    if (cache.dealQueue && cache.ts === ts && cache.snapRaw === raw) {
+      return JSON.parse(JSON.stringify(cache.dealQueue));
+    }
     var queue = cloneDealQueue();
     var snap = loadSnapshot();
     if (snap && Array.isArray(snap.dealQueue)) {
@@ -116,7 +164,35 @@ var TeamData = (function () {
         else if (deal && Array.isArray(saved.adj)) deal.adj = saved.adj.slice();
       });
     }
+    cache.dealQueue = JSON.parse(JSON.stringify(queue));
     return queue;
+  }
+
+  function postNotifyToParent() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "imworkdash-team-updated" }, "*");
+    }
+  }
+
+  function notifyUpdated() {
+    try {
+      localStorage.setItem(TS_KEY, String(Date.now()));
+    } catch (e) { /* ignore */ }
+    invalidateCache();
+    if (!(window.parent && window.parent !== window)) return;
+    if (notifyTimer) clearTimeout(notifyTimer);
+    notifyTimer = setTimeout(function () {
+      notifyTimer = null;
+      postNotifyToParent();
+    }, NOTIFY_DEBOUNCE_MS);
+  }
+
+  function flushNotify() {
+    if (notifyTimer) {
+      clearTimeout(notifyTimer);
+      notifyTimer = null;
+      postNotifyToParent();
+    }
   }
 
   function saveAll(roster, dealQueue, orgProjects) {
@@ -131,23 +207,17 @@ var TeamData = (function () {
       if (snap && snap.orgProjectsSchema != null) data.orgProjectsSchema = snap.orgProjectsSchema;
       if (snap && snap.notes) data.notes = snap.notes;
       var payload = JSON.stringify(data);
-      if (localStorage.getItem(STORAGE_KEY) === payload) return;
+      if (getSnapRaw() === payload) return;
       localStorage.setItem(STORAGE_KEY, payload);
+      cache.snapRaw = payload;
+      cache.roster = deepCloneRoster(roster);
+      if (dealQueue) cache.dealQueue = JSON.parse(JSON.stringify(dealQueue));
     } catch (e) { /* quota */ }
     notifyUpdated();
   }
 
   function saveRoster(roster) {
     saveAll(roster, loadDealQueue());
-  }
-
-  function notifyUpdated() {
-    try {
-      localStorage.setItem(STORAGE_KEY + "_ts", String(Date.now()));
-    } catch (e) { /* ignore */ }
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: "imworkdash-team-updated" }, "*");
-    }
   }
 
   function getLeadRoster(roster, tz) {
@@ -172,7 +242,9 @@ var TeamData = (function () {
   }
 
   function setNote(name, text) {
-    localStorage.setItem(getNoteKey(name), text);
+    var key = getNoteKey(name);
+    if (localStorage.getItem(key) === text) return;
+    localStorage.setItem(key, text);
     notifyUpdated();
   }
 
@@ -185,24 +257,58 @@ var TeamData = (function () {
         localStorage.getItem("note_t_" + im.name);
       if (legacy) localStorage.setItem(getNoteKey(im.name), legacy);
     });
+    notesMigrated = true;
   }
 
-  function initRoster() {
-    migrateLegacyManagerStorage();
-    var roster = loadRoster();
-    migrateNotes(roster);
+  function getSeedSchemaVersion() {
+    if (typeof ICSync !== "undefined" && ICSync.DEAL_COUNT_SCHEMA != null) {
+      return String(ICSync.DEAL_COUNT_SCHEMA);
+    }
+    return "10";
+  }
+
+  function needsSeedPass() {
+    return localStorage.getItem(SEED_SCHEMA_KEY) !== getSeedSchemaVersion();
+  }
+
+  function runSeedAndProjects(roster) {
+    var changed = false;
     if (typeof ICSync !== "undefined" && ICSync.seedRosterDeals) {
-      if (ICSync.seedRosterDeals(roster)) saveRoster(roster);
+      if (ICSync.seedRosterDeals(roster)) changed = true;
     }
     if (typeof ProjectsData !== "undefined" && ProjectsData.initAndApply) {
       ProjectsData.initAndApply(roster);
-      saveRoster(roster);
+      changed = true;
     }
-    return roster;
+    if (changed) saveRoster(roster);
+    try {
+      localStorage.setItem(SEED_SCHEMA_KEY, getSeedSchemaVersion());
+    } catch (e) { /* ignore */ }
   }
+
+  /** First load / schema bump — migrations, notes, deal seed, projects. */
+  function initRoster() {
+    migrateLegacyManagerStorage();
+    var roster = loadRoster();
+    if (!notesMigrated) migrateNotes(roster);
+    if (needsSeedPass()) runSeedAndProjects(roster);
+    return loadRoster();
+  }
+
+  /** Routine reload from storage (cached); runs seed only when schema version changes. */
+  function refreshRoster() {
+    migrateLegacyManagerStorage();
+    var roster = loadRoster();
+    if (!notesMigrated) migrateNotes(roster);
+    if (needsSeedPass()) runSeedAndProjects(roster);
+    return loadRoster();
+  }
+
+  window.addEventListener("beforeunload", flushNotify);
 
   return {
     STORAGE_KEY: STORAGE_KEY,
+    TS_KEY: TS_KEY,
     MPC_VALUES: MPC_VALUES,
     IC_PERSONA: IC_PERSONA,
     LEAD_PERSONA: LEAD_PERSONA,
@@ -215,6 +321,8 @@ var TeamData = (function () {
     saveAll: saveAll,
     saveRoster: saveRoster,
     notifyUpdated: notifyUpdated,
+    flushNotify: flushNotify,
+    invalidateCache: invalidateCache,
     getLeadRoster: getLeadRoster,
     getICPersonaName: getICPersonaName,
     getLeadTerritoryTz: getLeadTerritoryTz,
@@ -222,6 +330,7 @@ var TeamData = (function () {
     setNote: setNote,
     migrateNotes: migrateNotes,
     migrateLegacyManagerStorage: migrateLegacyManagerStorage,
-    initRoster: initRoster
+    initRoster: initRoster,
+    refreshRoster: refreshRoster
   };
 })();

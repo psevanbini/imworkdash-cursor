@@ -73,6 +73,14 @@
   margin-left: 4px;
 }
 
+.reporting-toolbar-group--refresh {
+  align-items: flex-start;
+}
+
+#report-refresh-data {
+  min-width: 120px;
+}
+
 .reporting-meta {
   display: flex;
   flex-wrap: wrap;

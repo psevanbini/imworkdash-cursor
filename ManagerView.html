@@ -16,8 +16,8 @@
   <script src="shared/view-sync.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
   <link rel="stylesheet" href="manager-view/reporting.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="shared/fiscal-calendar.js"></script>
+  <script src="shared/chart-loader.js"></script>
 </head>
 <body>
 
@@ -147,6 +147,10 @@
         <input type="date" id="report-date-to">
       </div>
       <button type="button" id="report-apply-range" class="btn-action active">Apply</button>
+      <div class="reporting-toolbar-group reporting-toolbar-group--refresh">
+        <span class="eyebrow">Data</span>
+        <button type="button" id="report-refresh-data" class="btn-action active">Refresh data</button>
+      </div>
       <div class="reporting-toolbar-group reporting-toolbar-group--charts">
         <button type="button" id="report-chart-visibility-toggle" class="btn-action">Show / Hide Charts</button>
         <button type="button" id="report-expand-all" class="btn-action">Expand All</button>
@@ -157,7 +161,7 @@
       <p class="report-visibility-hint">Uncheck a chart to hide it from the dashboard. Use ▼ on each chart header to collapse without hiding.</p>
       <div id="report-chart-visibility-list" class="report-chart-visibility-list"></div>
     </div>
-    <p class="reporting-hint">Charts reflect the <strong>Regional View</strong> filter above (regional comparison always shows all territories). Use ▼ to collapse charts or the panel above to show/hide them.</p>
+    <p class="reporting-hint">Charts load when you open <strong>Reporting</strong> or click <strong>Refresh data</strong>. They use the <strong>Regional View</strong> filter above (regional comparison always shows all territories). After edits elsewhere in the dashboard, refresh to pull the latest roster. Use ▼ to collapse charts or the panel above to show/hide them.</p>
     <div id="reporting-meta" class="reporting-meta"></div>
     <div id="reporting-dashboard" class="reporting-dashboard"></div>
   </div>

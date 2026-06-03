@@ -51,10 +51,9 @@
       .replace(/"/g, "&quot;");
   }
 
-  function reloadData() {
-    roster = TeamData.loadRoster();
+  function reloadData(fullInit) {
+    roster = fullInit ? TeamData.initRoster() : TeamData.refreshRoster();
     orgProjects = ProjectsData.loadOrgProjects();
-    ProjectsData.applyToRoster(roster, orgProjects);
     territoryIMs = TeamData.getLeadRoster(roster, territoryTz);
   }
 
@@ -658,7 +657,7 @@
   }
 
   function refreshAfterProjectChange() {
-    roster = TeamData.loadRoster();
+    roster = TeamData.refreshRoster();
     orgProjects = ProjectsData.loadOrgProjects();
     territoryIMs = TeamData.getLeadRoster(roster, territoryTz);
     updateTerritoryMetrics();
@@ -765,8 +764,8 @@
     renderMyProjects();
   }
 
-  function refresh() {
-    reloadData();
+  function refresh(fullInit) {
+    reloadData(fullInit);
     document.getElementById("lead-header-sub").textContent = territoryTz + " Regional Workload";
     document.getElementById("lead-tz-label").textContent = territoryTz;
     document.getElementById("lead-tz-hint").textContent = territoryTz;
@@ -859,6 +858,6 @@
   };
 
   bindLeadModals();
-  refresh();
-  IMWorkdashViewSync.onTeamDataUpdated(refresh);
+  refresh(true);
+  IMWorkdashViewSync.onTeamDataUpdated(function () { refresh(); });
 })();

@@ -78,25 +78,49 @@
         },
       };
 
+      var activeKey = null;
+      var dirtyFrames = { ic: false, lead: false, manager: false };
+      var SYNC_MSG = { type: "imworkdash-team-updated" };
+
+      function ensureFrameSrc(el) {
+        if (!el.getAttribute("src")) {
+          el.setAttribute("src", el.getAttribute("data-src"));
+        }
+      }
+
+      function preloadFrames() {
+        Object.keys(frames).forEach(function (k) {
+          ensureFrameSrc(frames[k]);
+        });
+      }
+
       function activate(key) {
+        if (!frames[key] || key === activeKey) return;
+        activeKey = key;
         Object.keys(frames).forEach(function (k) {
           const el = frames[k];
-          if (k === key) {
-            el.classList.add("is-active");
-            if (!el.getAttribute("src")) {
-              el.setAttribute("src", el.getAttribute("data-src"));
-            }
-          } else {
-            el.classList.remove("is-active");
-          }
+          ensureFrameSrc(el);
+          el.classList.toggle("is-active", k === key);
         });
         const info = meta[key];
         if (info) {
           subtitle.textContent = info.subtitle;
           announce.textContent = info.announce;
         }
+        if (select.value !== key) {
+          select.value = key;
+        }
         if (location.hash !== "#" + key) {
           history.replaceState(null, "", "#" + key);
+        }
+        if (dirtyFrames[key]) {
+          dirtyFrames[key] = false;
+          var frame = frames[key];
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage(SYNC_MSG, "*");
+            } catch (err) { /* unloaded */ }
+          }
         }
       }
 
@@ -106,29 +130,34 @@
       }
 
       select.addEventListener("change", function () {
-        activate(select.value);
+        requestAnimationFrame(function () {
+          activate(select.value);
+        });
       });
 
       window.addEventListener("hashchange", function () {
         const key = keyFromHash();
-        if (key && select.value !== key) {
-          select.value = key;
-          activate(key);
-        }
+        if (key) activate(key);
       });
 
       const initial = keyFromHash() || select.value;
       select.value = initial;
       activate(initial);
+      requestAnimationFrame(preloadFrames);
 
       window.addEventListener("message", function (e) {
         if (!e.data || e.data.type !== "imworkdash-team-updated") return;
         Object.keys(frames).forEach(function (key) {
           var frame = frames[key];
           if (!frame || !frame.contentWindow) return;
-          try {
-            frame.contentWindow.postMessage(e.data, "*");
-          } catch (err) { /* cross-origin or unloaded */ }
+          if (e.source === frame.contentWindow) return;
+          if (key === activeKey) {
+            try {
+              frame.contentWindow.postMessage(SYNC_MSG, "*");
+            } catch (err) { /* cross-origin or unloaded */ }
+          } else {
+            dirtyFrames[key] = true;
+          }
         });
       });
     })();

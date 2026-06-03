@@ -10,18 +10,34 @@
   var myDeals = [];
   var myProjects = [];
   var tierMax = 250;
+  var persistTimer = null;
+  var PERSIST_DEBOUNCE_MS = 250;
 
-  function persist() {
+  function persistNow() {
     ICSync.saveWorkspace(roster, personaName, myDeals, myProjects);
   }
 
-  function reloadFromStore() {
-    roster = TeamData.initRoster();
+  function persist() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      persistTimer = null;
+      persistNow();
+    }, PERSIST_DEBOUNCE_MS);
+  }
+
+  function reloadFromStore(useFullInit) {
+    roster = useFullInit ? TeamData.initRoster() : TeamData.refreshRoster();
     personaName = TeamData.getICPersonaName();
     var ws = ICSync.loadWorkspace(roster, personaName);
+    if (!ws) {
+      if (ICSync.seedRosterDeals(roster)) {
+        TeamData.saveRoster(roster);
+      }
+      ws = ICSync.loadWorkspace(roster, personaName);
+    }
     if (!ws) return;
-    myDeals = ws.deals;
-    myProjects = ws.projects;
+    myDeals = ws.deals || [];
+    myProjects = ws.projects || [];
     tierMax = TeamData.MPC_VALUES[ws.im.tier] || 250;
     var sub = document.querySelector(".header-text p");
     if (sub) sub.textContent = personaName + " — My Workload & Assignments";
@@ -173,6 +189,20 @@
     }
   };
 
-  refresh();
+  window.addEventListener("beforeunload", function () {
+    if (persistTimer) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+      persistNow();
+    }
+    if (typeof TeamData !== "undefined" && TeamData.flushNotify) {
+      TeamData.flushNotify();
+    }
+  });
+
+  reloadFromStore(true);
+  updateMetrics();
+  renderMyBook();
+  renderProjects();
   IMWorkdashViewSync.onTeamDataUpdated(refresh);
 })();

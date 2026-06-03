@@ -14,22 +14,37 @@ let currentLayout = 'list', currentSort = 'tier', currentTZ = 'all', sortDir = '
 
 let teamData = [];
 let dealQueue = [];
+let managerDataDirty = false;
 
 function saveManagerState() {
   TeamData.saveAll(teamData, dealQueue);
 }
 
-function initManagerData() {
-  teamData = TeamData.initRoster();
+function isEmbedFrameActive() {
+  try {
+    if (window.parent === window) return true;
+    const f = window.frameElement;
+    return f && f.classList.contains('is-active');
+  } catch (e) {
+    return true;
+  }
+}
+
+function initManagerData(fullInit) {
+  teamData = fullInit ? TeamData.initRoster() : TeamData.refreshRoster();
   dealQueue = TeamData.loadDealQueue();
 }
 
 function reloadFromSharedStore() {
-  initManagerData();
+  initManagerData(false);
   normalizeAllEligibility();
   updateMetrics();
-  renderContent(true);
-  renderReportingIfActive();
+  if (isEmbedFrameActive()) {
+    renderContent(true);
+    managerDataDirty = false;
+  } else {
+    managerDataDirty = true;
+  }
 }
 
 function switchSubTab(tab) {
@@ -41,8 +56,7 @@ function switchSubTab(tab) {
         switchAssignmentSubTab(currentAssignmentSubTab);
         renderContent();
     } else if (tab === 'reporting') {
-        updateMetrics();
-        renderReportingIfActive();
+        refreshReporting();
     } else {
         renderContent();
     }
@@ -135,19 +149,30 @@ function setTZFilter(tz, btn) {
     document.querySelectorAll('.filter-tz').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     updateMetrics(); renderContent();
-    renderReportingIfActive();
 }
 
 function getReportingContext() {
     return { team: teamData, tz: currentTZ };
 }
 
-function renderReportingIfActive() {
-    if (!document.getElementById('tab-reporting').classList.contains('active')) return;
+function runReportingRender() {
     if (typeof ICSync !== 'undefined' && ICSync.seedRosterDeals(teamData)) {
         saveManagerState();
     }
     ManagerReporting.render(getReportingContext());
+}
+
+/** Reload roster from shared store and rebuild reporting charts (tab open or Refresh only). */
+function refreshReporting() {
+    if (!document.getElementById('tab-reporting').classList.contains('active')) return;
+    initManagerData(false);
+    normalizeAllEligibility();
+    updateMetrics();
+    if (typeof ChartLoader !== 'undefined') {
+        ChartLoader.load(runReportingRender);
+    } else {
+        runReportingRender();
+    }
 }
 
 function businessDaysSince(dateStr) {
@@ -549,7 +574,7 @@ function renderContent(skipSave) {
 function setSort(t) { if (currentSort === t) sortDir = sortDir === 'desc' ? 'asc' : 'desc'; else { currentSort = t; sortDir = 'desc'; } document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active-sort')); document.getElementById('sort-'+t).classList.add('active-sort'); renderContent(); }
 function switchLayout(l) { currentLayout = l; document.getElementById('btn-list').classList.toggle('active', l==='list'); document.getElementById('btn-card').classList.toggle('active', l==='card'); renderContent(); }
 
-initManagerData();
+initManagerData(true);
 normalizeAllEligibility();
 updateMetrics();
 renderContent();
@@ -565,7 +590,7 @@ function bindManagerModals() {
     });
 }
 
-ManagerReporting.init(getReportingContext);
+ManagerReporting.init(getReportingContext, refreshReporting);
 bindManagerModals();
 
 IMWorkdashViewSync.onTeamDataUpdated(reloadFromSharedStore);

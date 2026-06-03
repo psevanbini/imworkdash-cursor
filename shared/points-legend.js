@@ -155,27 +155,37 @@ var PointsLegend = (function () {
   }
 
   function mount() {
-    var container = document.querySelector(".container");
-    var footer = container && container.querySelector("footer");
-    if (!container || !footer || document.getElementById("points-legend-wrap")) return;
+    try {
+      if (typeof ICSync === "undefined" || typeof TeamData === "undefined") return;
+      var container = document.querySelector(".container");
+      var footer = container && container.querySelector("footer");
+      if (!container || !footer || document.getElementById("points-legend-wrap")) return;
 
-    var wrap = document.createElement("div");
-    wrap.id = "points-legend-wrap";
-    wrap.className = "points-legend-wrap";
-    wrap.innerHTML =
-      '<button type="button" id="points-legend-toggle" class="points-legend-toggle btn-action" ' +
-      'aria-expanded="false" aria-controls="points-legend-panel">How are points calculated?</button>' +
-      '<div id="points-legend-panel" class="points-legend-panel" role="region" aria-labelledby="points-legend-toggle">' +
-      buildPanelHtml() +
-      "</div>";
+      var wrap = document.createElement("div");
+      wrap.id = "points-legend-wrap";
+      wrap.className = "points-legend-wrap";
+      wrap.innerHTML =
+        '<button type="button" id="points-legend-toggle" class="points-legend-toggle btn-action" ' +
+        'aria-expanded="false" aria-controls="points-legend-panel">How are points calculated?</button>' +
+        '<div id="points-legend-panel" class="points-legend-panel" role="region" aria-labelledby="points-legend-toggle"></div>';
 
-    footer.parentNode.insertBefore(wrap, footer);
+      footer.parentNode.insertBefore(wrap, footer);
 
-    var toggle = document.getElementById("points-legend-toggle");
-    toggle.addEventListener("click", function () {
-      var open = wrap.classList.toggle("is-open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    });
+      var toggle = document.getElementById("points-legend-toggle");
+      var panel = document.getElementById("points-legend-panel");
+      var panelBuilt = false;
+
+      toggle.addEventListener("click", function () {
+        if (!panelBuilt) {
+          panel.innerHTML = buildPanelHtml();
+          panelBuilt = true;
+        }
+        var open = wrap.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    } catch (e) {
+      console.warn("Points legend could not mount:", e);
+    }
   }
 
   if (document.readyState === "loading") {

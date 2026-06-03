@@ -1265,9 +1265,19 @@ var ManagerReporting = (function () {
     }
   }
 
-  function init(contextProvider) {
+  function bindRefreshDataButton(onRefreshData) {
+    var btn = document.getElementById("report-refresh-data");
+    if (!btn || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", function () {
+      if (typeof onRefreshData === "function") onRefreshData();
+    });
+  }
+
+  function init(contextProvider, onRefreshData) {
     initDateControls();
     bindReportingPanelDelegation(contextProvider);
+    bindRefreshDataButton(onRefreshData);
     bindDateControls(function () {
       render(contextProvider());
     });

@@ -420,9 +420,14 @@ var ICSync = (function () {
       var dealsReseed = needsDealReseed(im, roster, index);
       var count = dealCountForIM(im, index, roster);
       if (im.name === icPersona) {
-        var deals = dealsReseed
-          ? buildDealsForIM(im.name, index, count)
-          : JSON.parse(JSON.stringify(im.icDeals));
+        var deals;
+        if (dealsReseed) {
+          deals = buildDealsForIM(im.name, index, count);
+        } else if (im.icDeals && im.icDeals.length) {
+          deals = JSON.parse(JSON.stringify(im.icDeals));
+        } else {
+          deals = buildDealsForIM(im.name, index, count);
+        }
         var projects = ensureICProjects(im);
         var stageMigrated = !dealsReseed && normalizeIcDeals(deals);
         if (dealsReseed || icProjectsNeedMerge(im) || stageMigrated) {
@@ -449,9 +454,14 @@ var ICSync = (function () {
     if (imIndex < 0) return null;
     var im = roster[imIndex];
     var count = dealCountForIM(im, imIndex, roster);
-    var deals = needsDealReseed(im, roster, imIndex)
-      ? buildDealsForIM(personaName, imIndex, count)
-      : JSON.parse(JSON.stringify(im.icDeals));
+    var deals;
+    if (needsDealReseed(im, roster, imIndex)) {
+      deals = buildDealsForIM(personaName, imIndex, count);
+    } else if (im.icDeals && im.icDeals.length) {
+      deals = JSON.parse(JSON.stringify(im.icDeals));
+    } else {
+      deals = buildDealsForIM(personaName, imIndex, count);
+    }
     var projects =
       im.icProjects && im.icProjects.length
         ? JSON.parse(JSON.stringify(im.icProjects))
