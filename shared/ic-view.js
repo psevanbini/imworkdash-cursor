@@ -143,6 +143,7 @@
         "<td>" + ICSync.formatProjectRoleLabel(p.role) + "</td>" +
         "<td>" + ICSync.formatProjectTypeLabel(p.type) + "</td>" +
         "<td>" + ICSync.formatProjectComplexityLabel(p.complexity) + "</td>" +
+        "<td>" + ICSync.formatProjectTeamSizeLabel(p) + "</td>" +
         "<td>" + (p.startDate || "—") + "</td>" +
         '<td><span class="pill ' + dateClass + '">' + p.endDate + "</span></td>" +
         "<td><strong>" + pts + "</strong></td></tr>"

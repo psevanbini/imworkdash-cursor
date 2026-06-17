@@ -93,19 +93,34 @@
       <div class="lead-roster-section">
         <div class="section-header lead-roster-section-title">Territory Project Leads</div>
         <p class="lead-form-hint lead-roster-section-desc">Projects whose <strong>lead</strong> is an IM in <span class="lead-tz-label-inline">EST</span> — all contributors are listed (any region, not bolded).</p>
-        <table class="projects-table">
+        <table class="projects-table projects-table--territory-leads">
+          <colgroup>
+            <col class="col-project">
+            <col class="col-lead">
+            <col class="col-role">
+            <col class="col-type">
+            <col class="col-complexity">
+            <col class="col-team-size">
+            <col class="col-start">
+            <col class="col-end">
+            <col class="col-contributors">
+            <col class="col-sponsor">
+            <col class="col-points">
+            <col class="col-edit">
+          </colgroup>
           <thead>
             <tr>
-              <th>Project</th>
-              <th>Lead</th>
-              <th>Role</th>
-              <th>Type</th>
-              <th>Complexity</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Contributors</th>
-              <th>Sponsor</th>
-              <th>Total Points</th>
+              <th class="col-project">Project</th>
+              <th class="col-lead">Lead</th>
+              <th class="col-role">Role</th>
+              <th class="col-type">Type</th>
+              <th class="col-complexity">Complexity</th>
+              <th class="col-team-size">Team Size</th>
+              <th class="col-start">Start</th>
+              <th class="col-end">End</th>
+              <th class="col-contributors">Contributors</th>
+              <th class="col-sponsor">Sponsor</th>
+              <th class="col-points">Total Points</th>
               <th class="col-edit" aria-label="Edit"></th>
             </tr>
           </thead>
@@ -137,6 +152,7 @@
             <th>Role</th>
             <th>Type</th>
             <th>Complexity</th>
+            <th>Team Size</th>
             <th>Start</th>
             <th>End</th>
             <th>Total Points</th>

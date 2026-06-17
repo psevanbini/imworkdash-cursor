@@ -15,6 +15,7 @@
   <script src="shared/projects-data.js"></script>
   <script src="shared/view-sync.js"></script>
   <link rel="stylesheet" href="manager-view/manager-view.css">
+  <link rel="stylesheet" href="shared/lead-view.css">
   <link rel="stylesheet" href="manager-view/reporting.css">
   <script src="shared/fiscal-calendar.js"></script>
   <script src="shared/chart-loader.js"></script>
@@ -63,6 +64,7 @@
     <div id="tab-assignment" class="sub-tab" onclick="switchSubTab('assignment')">
         Deal Assignment Review <span id="assignment-badge" class="tab-badge">0</span>
     </div>
+    <div id="tab-projects" class="sub-tab" onclick="switchSubTab('projects')">Project Management</div>
     <div id="tab-reporting" class="sub-tab" onclick="switchSubTab('reporting')">Reporting</div>
   </div>
 
@@ -124,6 +126,57 @@
     </div>
   </div>
 
+  <div id="view-projects" class="tab-content" style="display:none;">
+    <div class="sub-tabs assignment-sub-tabs mgr-project-subtabs">
+      <div id="mgr-proj-tab-roster" class="sub-tab active" onclick="ManagerProjects.switchProjectSubTab('roster')">Project Roster</div>
+      <div id="mgr-proj-tab-mine" class="sub-tab" onclick="ManagerProjects.switchProjectSubTab('mine')">My Projects</div>
+    </div>
+
+    <div id="mgr-proj-panel-roster" class="lead-project-panel active">
+      <div class="section-header">Project Roster</div>
+      <p class="lead-form-hint" style="margin-top:-8px; margin-bottom:14px;">
+        Strategic projects for <span class="mgr-tz-label-inline">All Regions</span>.
+        Listed by IM (Tier 2+, T1 excluded) in the current <strong>Regional View</strong> filter — expand each IM to see projects they lead or contribute to.
+      </p>
+      <div class="lead-roster-section lead-roster-section--by-im mgr-project-roster-by-im">
+        <div class="section-header lead-roster-section-title">Projects by IM — <span class="mgr-tz-label-inline">All Regions</span></div>
+        <p class="lead-form-hint lead-roster-section-desc">Click an IM to expand or collapse their projects.</p>
+        <div class="controls lead-im-project-controls">
+          <div class="control-group">
+            <span class="eyebrow" style="margin-right: 8px;">Sort by:</span>
+            <button id="mgr-im-sort-tier" type="button" class="btn-action btn-sort active-sort" onclick="ManagerProjects.setImProjectSort()">Tier ↑↓</button>
+          </div>
+          <span id="mgr-im-sort-hint" class="lead-form-hint lead-im-sort-hint">Highest tier first</span>
+        </div>
+        <div id="mgr-im-project-sections"></div>
+      </div>
+    </div>
+
+    <div id="mgr-proj-panel-mine" class="lead-project-panel">
+      <div class="section-header">My Projects</div>
+      <p class="lead-form-hint" style="margin-top:-8px; margin-bottom:14px;">
+        Projects you <strong>sponsor</strong> as <span id="mgr-sponsor-label">Morgan Tate — Implementation Manager</span>.
+        Implementation managers do not serve as project leads; this list is sponsor assignments only (filtered by <strong>Regional View</strong>).
+      </p>
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Project Lead</th>
+            <th>Type</th>
+            <th>Complexity</th>
+            <th>Team Size</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Contributors</th>
+            <th>Ref. Points</th>
+          </tr>
+        </thead>
+        <tbody id="mgr-my-projects-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="view-reporting" class="tab-content" style="display:none;">
     <div class="reporting-toolbar">
       <div class="reporting-toolbar-group reporting-toolbar-group--modes">
@@ -146,10 +199,37 @@
         <label for="report-date-to">To</label>
         <input type="date" id="report-date-to">
       </div>
-      <button type="button" id="report-apply-range" class="btn-action active">Apply</button>
-      <div class="reporting-toolbar-group reporting-toolbar-group--refresh">
+      <div class="reporting-toolbar-group reporting-toolbar-group--data-actions">
         <span class="eyebrow">Data</span>
-        <button type="button" id="report-refresh-data" class="btn-action active">Refresh data</button>
+        <div class="reporting-data-actions">
+          <button type="button" id="report-apply-range" class="btn-action active">Apply</button>
+          <button type="button" id="report-refresh-data" class="btn-action active">Refresh data</button>
+          <div class="report-actions-help">
+            <button
+              type="button"
+              id="report-actions-info"
+              class="report-info-btn"
+              aria-label="About Apply and Refresh data"
+              aria-expanded="false"
+              aria-controls="report-actions-popover"
+            >ℹ</button>
+            <div
+              id="report-actions-popover"
+              class="report-actions-popover"
+              role="dialog"
+              aria-labelledby="report-actions-popover-title"
+              hidden
+            >
+              <p id="report-actions-popover-title" class="report-actions-popover-title">Apply vs Refresh data</p>
+              <ul class="report-actions-popover-list">
+                <li><strong>Apply</strong> → Date range + charts (current data in memory)</li>
+                <li><strong>Refresh data</strong> → Latest roster + summary cards + date range + charts</li>
+              </ul>
+              <p class="report-actions-popover-foot">Use <strong>Refresh data</strong> after changes in IC or Team Lead views.</p>
+              <button type="button" class="report-actions-popover-close btn-action">Close</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="reporting-toolbar-group reporting-toolbar-group--charts">
         <button type="button" id="report-chart-visibility-toggle" class="btn-action">Show / Hide Charts</button>
@@ -161,7 +241,7 @@
       <p class="report-visibility-hint">Uncheck a chart to hide it from the dashboard. Use ▼ on each chart header to collapse without hiding.</p>
       <div id="report-chart-visibility-list" class="report-chart-visibility-list"></div>
     </div>
-    <p class="reporting-hint">Charts load when you open <strong>Reporting</strong> or click <strong>Refresh data</strong>. They use the <strong>Regional View</strong> filter above (regional comparison always shows all territories). After edits elsewhere in the dashboard, refresh to pull the latest roster. Use ▼ to collapse charts or the panel above to show/hide them.</p>
+    <p class="reporting-hint">Charts load when you open <strong>Reporting</strong> or click <strong>Refresh data</strong> (applies the selected date range, including <strong>Calendar Dates</strong>). <strong>Apply</strong> updates charts for date changes only; <strong>Refresh data</strong> also pulls the latest roster. Charts use the <strong>Regional View</strong> filter above. Use ▼ to collapse charts or the panel above to show/hide them.</p>
     <div id="reporting-meta" class="reporting-meta"></div>
     <div id="reporting-dashboard" class="reporting-dashboard"></div>
   </div>
@@ -208,6 +288,7 @@
 
   <script src="manager-view/reporting-data.js"></script>
   <script src="manager-view/reporting.js"></script>
+  <script src="manager-view/manager-projects.js"></script>
   <script src="manager-view/manager-view.js"></script>
 
 </body>

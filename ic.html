@@ -34,11 +34,6 @@
     </div>
   </header>
 
-  <div class="tabs">
-    <div id="tab-my-workload" class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="ICView.switchICTab('workload')">My Workload</div>
-    <div id="tab-my-projects" class="tab" role="tab" aria-selected="false" tabindex="0" onclick="ICView.switchICTab('projects')">My Projects</div>
-  </div>
-
   <div class="summary">
     <div class="card card-summary-deals">
         <div class="main-val"><span id="stat-deals-count">0</span> Deals</div>
@@ -67,6 +62,11 @@
     </div>
   </div>
 
+  <div class="sub-tabs main-sub-tabs">
+    <div id="tab-my-workload" class="sub-tab active" role="tab" aria-selected="true" tabindex="0" onclick="ICView.switchICTab('workload')">My Workload</div>
+    <div id="tab-my-projects" class="sub-tab" role="tab" aria-selected="false" tabindex="0" onclick="ICView.switchICTab('projects')">My Projects</div>
+  </div>
+
   <div id="view-my-workload" class="tab-panel active">
     <div class="section-header">Implementation Deals</div>
     <table>
@@ -84,6 +84,7 @@
           <th>Role</th>
           <th>Type</th>
           <th>Complexity</th>
+          <th>Team Size</th>
           <th>Start</th>
           <th>End Date</th>
           <th>Total Points</th>

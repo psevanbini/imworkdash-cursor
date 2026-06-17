@@ -62,6 +62,133 @@
   vertical-align: middle;
 }
 
+/* Project roster tables — fixed columns so headers/data align down the page (Lead + Manager) */
+.projects-table.projects-table--im-roster,
+.projects-table.projects-table--territory-leads {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.projects-table.projects-table--im-roster th,
+.projects-table.projects-table--im-roster td,
+.projects-table.projects-table--territory-leads th,
+.projects-table.projects-table--territory-leads td {
+  vertical-align: top;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.projects-table.projects-table--im-roster .col-project,
+.projects-table.projects-table--im-roster col.col-project,
+.projects-table.projects-table--territory-leads .col-project,
+.projects-table.projects-table--territory-leads col.col-project {
+  width: 20%;
+}
+
+.projects-table.projects-table--im-roster .col-role,
+.projects-table.projects-table--im-roster col.col-role,
+.projects-table.projects-table--territory-leads .col-lead,
+.projects-table.projects-table--territory-leads col.col-lead {
+  width: 12%;
+}
+
+.projects-table.projects-table--territory-leads .col-role,
+.projects-table.projects-table--territory-leads col.col-role {
+  width: 8%;
+}
+
+.projects-table.projects-table--im-roster .col-type,
+.projects-table.projects-table--im-roster col.col-type,
+.projects-table.projects-table--territory-leads .col-type,
+.projects-table.projects-table--territory-leads col.col-type {
+  width: 10%;
+}
+
+.projects-table.projects-table--im-roster .col-complexity,
+.projects-table.projects-table--im-roster col.col-complexity,
+.projects-table.projects-table--territory-leads .col-complexity,
+.projects-table.projects-table--territory-leads col.col-complexity {
+  width: 9%;
+}
+
+.projects-table.projects-table--im-roster .col-team-size,
+.projects-table.projects-table--im-roster col.col-team-size,
+.projects-table.projects-table--territory-leads .col-team-size,
+.projects-table.projects-table--territory-leads col.col-team-size {
+  width: 8%;
+  white-space: nowrap;
+}
+
+.projects-table.projects-table--im-roster .col-start,
+.projects-table.projects-table--im-roster col.col-start,
+.projects-table.projects-table--territory-leads .col-start,
+.projects-table.projects-table--territory-leads col.col-start {
+  width: 9%;
+}
+
+.projects-table.projects-table--im-roster .col-end,
+.projects-table.projects-table--im-roster col.col-end,
+.projects-table.projects-table--territory-leads .col-end,
+.projects-table.projects-table--territory-leads col.col-end {
+  width: 9%;
+}
+
+.projects-table.projects-table--im-roster .col-proj-lead,
+.projects-table.projects-table--im-roster col.col-proj-lead {
+  width: 14%;
+}
+
+.projects-table.projects-table--im-roster .col-points,
+.projects-table.projects-table--im-roster col.col-points {
+  width: 8%;
+}
+
+.projects-table.projects-table--territory-leads .col-contributors,
+.projects-table.projects-table--territory-leads col.col-contributors {
+  width: 14%;
+}
+
+.projects-table.projects-table--territory-leads .col-sponsor,
+.projects-table.projects-table--territory-leads col.col-sponsor {
+  width: 12%;
+}
+
+.projects-table.projects-table--territory-leads .col-points,
+.projects-table.projects-table--territory-leads col.col-points {
+  width: 7%;
+}
+
+.projects-table.projects-table--territory-leads .col-edit,
+.projects-table.projects-table--territory-leads col.col-edit {
+  width: 36px;
+}
+
+.projects-table.projects-table--im-roster .col-project strong,
+.projects-table.projects-table--territory-leads .col-project strong {
+  font-weight: 600;
+  line-height: 1.35;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.projects-table.projects-table--im-roster .col-end .pill,
+.projects-table.projects-table--territory-leads .col-end .pill {
+  white-space: nowrap;
+}
+
+.projects-table.projects-table--im-roster .col-start,
+.projects-table.projects-table--im-roster .col-end,
+.projects-table.projects-table--territory-leads .col-start,
+.projects-table.projects-table--territory-leads .col-end {
+  white-space: nowrap;
+}
+
+.projects-table.projects-table--im-roster .col-points,
+.projects-table.projects-table--territory-leads .col-points {
+  white-space: nowrap;
+}
+
 .lead-new-project-form {
   max-width: 640px;
   background: var(--psq-surface);
@@ -202,7 +329,8 @@
 .project-roster-contributor-line {
   display: block;
   line-height: 1.35;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .project-roster-contributor-line + .project-roster-contributor-line {
@@ -278,6 +406,10 @@
 
 .lead-im-project-block .projects-table {
   margin-bottom: 0;
+}
+
+.lead-roster-section--by-im .lead-im-project-body {
+  overflow-x: auto;
 }
 
 .lead-roster-section-title {

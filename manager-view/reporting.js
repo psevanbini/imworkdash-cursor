@@ -2,7 +2,7 @@
  * Manager Reporting tab — static charts by region & date range (no animation).
  */
 var ManagerReporting = (function () {
-  var LAYOUT_KEY = "imworkdash_reporting_layout_v1";
+  var LAYOUT_KEY = "imworkdash_reporting_layout_v3";
   var PREFS_KEY = "imworkdash_reporting_prefs_v2";
 
   var WIDGETS = [
@@ -13,17 +13,17 @@ var ManagerReporting = (function () {
     { id: "arr-per-point", title: "ARR per Point by IM", wide: false },
     { id: "csat-by-im", title: "Avg CSAT — HubSpot (out of 5)", wide: false },
     { id: "csat-vs-ttv", title: "CSAT vs Time to Value — HubSpot", wide: true },
-    { id: "time-to-value", title: "Avg Time to Value — HubSpot (days)", wide: false },
     { id: "at-risk-deals", title: "At-Risk Deals by IM (Y / R)", wide: true },
     { id: "past-due-projects", title: "Past-Due Projects by IM", wide: false },
+    { id: "time-to-value", title: "Avg Time to Value — HubSpot (days)", wide: false },
     { id: "adjustments-by-type", title: "Deal Adjustments by Type", wide: true },
     { id: "over-cap-time", title: "Time Above Max Capacity (days)", wide: false },
     { id: "over-cap-points", title: "Points Above Max Capacity", wide: false },
     { id: "burnout-risk", title: "Burnout Risk Index", wide: false },
+    { id: "escalations-by-im", title: "Escalations / Churn by IM", wide: false },
+    { id: "rotation-removals", title: "Rotation Removals by Reason", wide: true, reasonFilter: true },
     { id: "rotation-days-off", title: "Time Off Rotation (business days)", wide: false },
     { id: "rotation-readds", title: "Rotation Re-Adds", wide: false },
-    { id: "rotation-removals", title: "Rotation Removals by Reason", wide: true, reasonFilter: true },
-    { id: "escalations-by-im", title: "Escalations / Churn by IM", wide: false },
     { id: "region-rollup", title: "Regional Comparison (EST / CST / PST)", wide: true, regionMetricFilter: true },
     { id: "tier-benchmark", title: "Tier Benchmark — Points, TTV & CSAT", wide: true },
     { id: "tier-t1", title: "Tier 1 — Points Over Time", wide: true },
@@ -1180,17 +1180,16 @@ var ManagerReporting = (function () {
     syncDateModePanels();
   }
 
-  function bindDateControls(onChange) {
+  function bindDateControls(onApplyRange) {
     document.querySelectorAll('input[name="report-date-mode"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
         syncDateModePanels();
-        onChange();
       });
     });
-    ["report-date-from", "report-date-to", "report-quarter-select", "report-fiscal-year-select"].forEach(function (id) {
-      document.getElementById(id).addEventListener("change", onChange);
+    document.getElementById("report-apply-range").addEventListener("click", function () {
+      commitDateToolbar();
+      if (typeof onApplyRange === "function") onApplyRange();
     });
-    document.getElementById("report-apply-range").addEventListener("click", onChange);
   }
 
   function saveDatePrefs() {
@@ -1209,6 +1208,13 @@ var ManagerReporting = (function () {
     });
   }
 
+  /** Persist toolbar date mode and range from current control values (no chart render). */
+  function commitDateToolbar() {
+    syncDateModePanels();
+    saveDatePrefs();
+    return getRangeFromControls();
+  }
+
   function normalizeWidgetPrefs() {
     var ids = WIDGETS.map(function (w) { return w.id; });
     var hiddenCount = ids.filter(function (id) { return hiddenWidgets[id]; }).length;
@@ -1224,6 +1230,7 @@ var ManagerReporting = (function () {
 
     ReportingData.prepareRoster(context.team);
 
+    syncDateModePanels();
     var range = getRangeFromControls();
     range.tz = context.tz;
     normalizeWidgetPrefs();
@@ -1265,11 +1272,53 @@ var ManagerReporting = (function () {
     }
   }
 
+  function bindReportingActionsHelp() {
+    var btn = document.getElementById("report-actions-info");
+    var pop = document.getElementById("report-actions-popover");
+    if (!btn || !pop || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+
+    function closePopover() {
+      pop.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    function openPopover() {
+      pop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (pop.hidden) openPopover();
+      else closePopover();
+    });
+
+    var closeBtn = pop.querySelector(".report-actions-popover-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        closePopover();
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (pop.hidden) return;
+      if (pop.contains(e.target) || btn.contains(e.target)) return;
+      closePopover();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !pop.hidden) closePopover();
+    });
+  }
+
   function bindRefreshDataButton(onRefreshData) {
     var btn = document.getElementById("report-refresh-data");
     if (!btn || btn.dataset.bound) return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", function () {
+      commitDateToolbar();
       if (typeof onRefreshData === "function") onRefreshData();
     });
   }
@@ -1277,6 +1326,7 @@ var ManagerReporting = (function () {
   function init(contextProvider, onRefreshData) {
     initDateControls();
     bindReportingPanelDelegation(contextProvider);
+    bindReportingActionsHelp();
     bindRefreshDataButton(onRefreshData);
     bindDateControls(function () {
       render(contextProvider());
@@ -1289,6 +1339,8 @@ var ManagerReporting = (function () {
   return {
     init: init,
     render: render,
+    commitDateToolbar: commitDateToolbar,
+    getRangeFromControls: getRangeFromControls,
     WIDGETS: WIDGETS
   };
 })();

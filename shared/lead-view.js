@@ -208,6 +208,29 @@
     };
   }
 
+  var IM_ROSTER_TABLE_COLGROUP =
+    "<colgroup>" +
+    '<col class="col-project"><col class="col-role"><col class="col-type">' +
+    '<col class="col-complexity"><col class="col-team-size"><col class="col-start"><col class="col-end">' +
+    '<col class="col-proj-lead"><col class="col-points"></colgroup>';
+
+  function imRosterTableHeadHtml(roleLabel, pointsLabel) {
+    return (
+      IM_ROSTER_TABLE_COLGROUP +
+      "<thead><tr>" +
+      '<th class="col-project">Project</th>' +
+      '<th class="col-role">' + roleLabel + "</th>" +
+      '<th class="col-type">Type</th>' +
+      '<th class="col-complexity">Complexity</th>' +
+      '<th class="col-team-size">Team Size</th>' +
+      '<th class="col-start">Start</th>' +
+      '<th class="col-end">End</th>' +
+      '<th class="col-proj-lead">Project Lead</th>' +
+      '<th class="col-points">' + pointsLabel + "</th>" +
+      "</tr></thead>"
+    );
+  }
+
   function projectRowHtml(p, byName, showEdit) {
     var roleLabel = ICSync.formatProjectRoleLabel("Lead");
     var pts = ICSync.calculateProjectPoints(projectPointPayload(p, "Lead"));
@@ -218,16 +241,17 @@
       : "";
     return (
       "<tr>" +
-      "<td><strong>" + escapeHtml(p.name) + "</strong></td>" +
-      "<td>" + escapeHtml(formatPersonName(p.lead)) + "</td>" +
-      "<td>" + escapeHtml(roleLabel) + "</td>" +
-      "<td>" + escapeHtml(ICSync.formatProjectTypeLabel(p.type)) + "</td>" +
-      "<td>" + escapeHtml(ICSync.formatProjectComplexityLabel(p.complexity)) + "</td>" +
-      "<td>" + escapeHtml(p.startDate) + "</td>" +
-      '<td><span class="pill ' + datePillClass(p.endDate) + '">' + escapeHtml(p.endDate) + "</span></td>" +
-      '<td class="project-roster-contributors">' + contrib + "</td>" +
-      "<td>" + escapeHtml(p.sponsor || "—") + "</td>" +
-      "<td><strong>" + pts + "</strong></td>" +
+      '<td class="col-project"><strong>' + escapeHtml(p.name) + "</strong></td>" +
+      '<td class="col-lead">' + escapeHtml(formatPersonName(p.lead)) + "</td>" +
+      '<td class="col-role">' + escapeHtml(roleLabel) + "</td>" +
+      '<td class="col-type">' + escapeHtml(ICSync.formatProjectTypeLabel(p.type)) + "</td>" +
+      '<td class="col-complexity">' + escapeHtml(ICSync.formatProjectComplexityLabel(p.complexity)) + "</td>" +
+      '<td class="col-team-size">' + escapeHtml(ICSync.formatProjectTeamSizeLabel(p)) + "</td>" +
+      '<td class="col-start">' + escapeHtml(p.startDate) + "</td>" +
+      '<td class="col-end"><span class="pill ' + datePillClass(p.endDate) + '">' + escapeHtml(p.endDate) + "</span></td>" +
+      '<td class="col-contributors project-roster-contributors">' + contrib + "</td>" +
+      '<td class="col-sponsor">' + escapeHtml(p.sponsor || "—") + "</td>" +
+      '<td class="col-points"><strong>' + pts + "</strong></td>" +
       editCell +
       "</tr>"
     );
@@ -255,14 +279,15 @@
       : escapeHtml(formatPersonName(p.lead));
     return (
       "<tr>" +
-      "<td><strong>" + escapeHtml(p.name) + "</strong></td>" +
-      "<td>" + escapeHtml(ICSync.formatProjectRoleLabel(role)) + "</td>" +
-      "<td>" + escapeHtml(ICSync.formatProjectTypeLabel(p.type)) + "</td>" +
-      "<td>" + escapeHtml(ICSync.formatProjectComplexityLabel(p.complexity)) + "</td>" +
-      "<td>" + escapeHtml(p.startDate) + "</td>" +
-      '<td><span class="pill ' + datePillClass(p.endDate) + '">' + escapeHtml(p.endDate) + "</span></td>" +
-      "<td>" + leadCell + "</td>" +
-      "<td><strong>" + myPts + "</strong></td>" +
+      '<td class="col-project"><strong>' + escapeHtml(p.name) + "</strong></td>" +
+      '<td class="col-role">' + escapeHtml(ICSync.formatProjectRoleLabel(role)) + "</td>" +
+      '<td class="col-type">' + escapeHtml(ICSync.formatProjectTypeLabel(p.type)) + "</td>" +
+      '<td class="col-complexity">' + escapeHtml(ICSync.formatProjectComplexityLabel(p.complexity)) + "</td>" +
+      '<td class="col-team-size">' + escapeHtml(ICSync.formatProjectTeamSizeLabel(p)) + "</td>" +
+      '<td class="col-start">' + escapeHtml(p.startDate) + "</td>" +
+      '<td class="col-end"><span class="pill ' + datePillClass(p.endDate) + '">' + escapeHtml(p.endDate) + "</span></td>" +
+      '<td class="col-proj-lead">' + leadCell + "</td>" +
+      '<td class="col-points"><strong>' + myPts + "</strong></td>" +
       "</tr>"
     );
   }
@@ -270,7 +295,7 @@
   function renderProjectRosterSection(bodyId, list, emptyMsg, byName, colSpan, showEdit) {
     var body = document.getElementById(bodyId);
     if (!body) return;
-    var cols = colSpan || 10;
+    var cols = colSpan || 11;
     if (!list.length) {
       body.innerHTML = '<tr><td colspan="' + cols + '" style="color:var(--psq-muted);">' + emptyMsg + "</td></tr>";
       return;
@@ -339,7 +364,7 @@
       countLabel += " · " + totalPts + " pts";
       var tableBody = projects.length
         ? projects.map(function (p) { return imProjectRowHtml(p, im.name, byName); }).join("")
-        : '<tr><td colspan="8" style="color:var(--psq-muted);">No projects as lead or contributor.</td></tr>';
+        : '<tr><td colspan="9" style="color:var(--psq-muted);">No projects as lead or contributor.</td></tr>';
       return (
         '<div id="' + imSectionDomId(im.name) + '" class="lead-im-project-block' + (collapsed ? " is-collapsed" : "") + '">' +
         '<button type="button" class="lead-im-project-header" aria-expanded="' + (!collapsed) + '" ' +
@@ -347,10 +372,9 @@
         '<span><span class="lead-im-chevron">' + chevron + "</span> " + escapeHtml(formatIMName(im)) + "</span>" +
         '<span class="lead-im-project-count">' + countLabel + "</span></button>" +
         '<div class="lead-im-project-body">' +
-        '<table class="projects-table"><thead><tr>' +
-        "<th>Project</th><th>My Role</th><th>Type</th><th>Complexity</th>" +
-        "<th>Start</th><th>End</th><th>Project Lead</th><th>My Points</th>" +
-        "</tr></thead><tbody>" + tableBody + "</tbody></table></div></div>"
+        '<table class="projects-table projects-table--im-roster">' +
+        imRosterTableHeadHtml("My Role", "My Points") +
+        "<tbody>" + tableBody + "</tbody></table></div></div>"
       );
     }).join("");
   }
@@ -367,7 +391,7 @@
       leadProjects,
       "No projects with a lead in " + territoryTz + ".",
       byName,
-      11,
+      12,
       true
     );
     renderImProjectSections(byName);
@@ -377,7 +401,7 @@
     var body = document.getElementById("lead-my-projects-body");
     var mine = ProjectsData.getProjectsForIM(orgProjects, leadPersona);
     if (!mine.length) {
-      body.innerHTML = '<tr><td colspan="7" style="color:var(--psq-muted);">No active projects assigned (check start dates).</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" style="color:var(--psq-muted);">No active projects assigned (check start dates).</td></tr>';
       return;
     }
     body.innerHTML = mine.map(function (p) {
@@ -387,6 +411,7 @@
         "<td>" + escapeHtml(ICSync.formatProjectRoleLabel(p.role)) + "</td>" +
         "<td>" + escapeHtml(ICSync.formatProjectTypeLabel(p.type)) + "</td>" +
         "<td>" + escapeHtml(ICSync.formatProjectComplexityLabel(p.complexity)) + "</td>" +
+        "<td>" + escapeHtml(ICSync.formatProjectTeamSizeLabel(p)) + "</td>" +
         "<td>" + escapeHtml(p.startDate || "—") + "</td>" +
         '<td><span class="pill ' + datePillClass(p.endDate) + '">' + escapeHtml(p.endDate) + "</span></td>" +
         "<td><strong>" + pts + "</strong></td></tr>"

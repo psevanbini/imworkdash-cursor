@@ -1,50 +1,63 @@
 ---
-description: Manager view baseline is 5/29/26; ignore 6/2 Manager edits unless explicitly requested.
+description: Manager view scope — roster, assignment, read-only Project Management, Reporting; do not remove designed features.
 globs: ManagerView.html,manager-view/**/*
 alwaysApply: false
 ---
 
-# Manager view baseline (5/29/26)
+# Manager view — current scope
 
-Treat the **Manager view** as frozen at the **last commit on 5/29/2026** — `1a3a23d` (10:09), not the earlier `9f9a527` (10:02). Later commits may change shared data files; do **not** change Manager files unless the user asks.
+The **Manager view** (`ManagerView.html`, `manager-view/`) is an active product surface. **Do not remove, revert, or “baseline-restore”** features the user has designed unless they explicitly ask.
 
-| 5/29 commit | Time | Manager impact |
-|-------------|------|----------------|
-| `9f9a527` | 10:02 | Tier deal books, rotation workflow, queue badges (`manager-view.js`, `ManagerView.html`) |
-| `1a3a23d` | 10:09 | Pink rotation alert cards (`manager-view.css`) — **baseline** |
+## Main tabs (all in scope)
 
-## Do not re-apply (6/2/26 work — rejected)
+| Tab | Purpose |
+|-----|---------|
+| Full Team Roster | Org-wide IM list/card views, regional filter, notes |
+| Deal Assignment Review | Queue, rotation alerts/removals, IM eligibility |
+| **Project Management** | Read-only rollup — **retain as implemented** |
+| Reporting | Charts, date range, Apply vs Refresh data |
 
-Unless the user **explicitly** asks to change the Manager view again, do **not** add or restore:
+## Project Management (Manager) — retain as designed
+
+These are **intentional** and must stay unless the user requests changes:
 
 - `manager-view/manager-projects.js`
-- **Project Management** tab (`tab-projects`, `view-projects`) in `ManagerView.html`
-- Manager imports of `shared/projects-data.js` or `shared/lead-view.css`
-- Manager wiring to `ProjectsData`, `renderManagerProjects()`, or `countRegionalProjects()` in `manager-view/manager-view.js`
-- Manager-specific project panel CSS in `manager-view/manager-view.css`
+- `ManagerView.html`: `tab-projects`, `view-projects`, sub-tabs **Project Roster** / **My Projects**
+- Imports: `shared/projects-data.js`, `shared/lead-view.css` (roster table styling)
+- `manager-view/manager-view.js`: `renderManagerProjects()`, `ProjectsData` / `countRegionalProjects()`, project tab in `switchSubTab` / `setTZFilter` / `reloadFromSharedStore`
 
-## In scope for Manager work
+**Manager PM is narrower than Team Lead** (by design):
 
-When editing Manager files, match patterns already on `main` at 5/29:
+- **Regional View** filter applies; **T1 IMs excluded** from contributor roster (`ProjectsData.canIMBeProjectContributor`)
+- **Project Roster**: IM sections only (no territory-leads table)
+- **My Projects**: sponsor list for `TeamData.MANAGER_SPONSOR` — view only, no New Project / edit modals
 
-- Roster, Deal Assignment Review, Reporting tabs
-- `manager-view/manager-view.js`, `reporting.js`, `reporting-data.js`
-- Shared team data via `TeamData` / `ic-sync` as already wired on 5/29
+Do **not** port Lead-only flows (new project form, edit modal, contributor editing) into Manager unless the user explicitly asks.
 
-## Out of scope (unless user overrides this rule)
+## Reporting (Manager)
 
-- Porting Team Lead **Project Management** UI or logic into Manager
-- Assuming Manager has org-project roster / sponsor “My Projects” features
+- `manager-view/reporting.js`, `reporting-data.js`, `reporting.css`
+- Charts use mock/seeded HubSpot-style metrics in `reporting-data.js`; roster/deals from `TeamData` / `ICSync`
+- **Apply** = date range + charts from memory; **Refresh data** = reload roster + metrics + charts
+- Reporting refreshes on tab open / **Refresh data**, not on every cross-view edit while Reporting is active
+- Layout/prefs keys: `imworkdash_reporting_layout_v3`, `imworkdash_reporting_prefs_v2`
 
-## Team Lead is separate
+## Team Lead Project Management (separate, more robust)
 
-`LeadView.html`, `shared/lead-view.js`, `shared/lead-view.css`, and `shared/projects-data.js` are the Team Lead surface. Changes there do **not** imply Manager should be updated to match.
+`LeadView.html`, `shared/lead-view.js`, `shared/lead-view.css`, `shared/projects-data.js` — full territory PM (roster, new/edit project, sponsors). Changes there **do not** require matching Manager CRUD; only shared data/contracts (`ProjectsData`, `TeamData`) when behavior must stay consistent.
 
-## If Manager files drift
+## Shared data & shell
 
-Restore Manager tracked files from git baseline:
+- Roster/sync: `shared/team-data.js`, `shared/ic-sync.js`, `shared/view-sync.js`
+- Unified entry: `index.html` (role iframes); hidden frames defer sync until active
 
-```bash
-git restore ManagerView.html manager-view/
-rm -f manager-view/manager-projects.js
-```
+## Do not do unless asked
+
+- Delete `manager-projects.js` or strip the Project Management tab
+- Run `git restore ManagerView.html manager-view/` to wipe current Manager work
+- Re-apply old “5/29 only / no Manager PM” restrictions from prior rule versions
+- Assume Reporting metrics are live HubSpot API data
+
+## When editing Manager files
+
+Match existing patterns in `manager-view.js` and sibling modules: globals for roster/assignment onclick handlers, `ManagerProjects` / `ManagerReporting` IIFEs for namespaced APIs, regional filter via `currentTZ`, embed-aware refresh via `IMWorkdashViewSync` / `isEmbedFrameActive()`.

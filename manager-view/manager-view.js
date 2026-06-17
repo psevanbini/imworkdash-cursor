@@ -35,12 +35,21 @@ function initManagerData(fullInit) {
   dealQueue = TeamData.loadDealQueue();
 }
 
+function isProjectsTabActive() {
+  var tab = document.getElementById('tab-projects');
+  return tab && tab.classList.contains('active');
+}
+
 function reloadFromSharedStore() {
   initManagerData(false);
   normalizeAllEligibility();
   updateMetrics();
   if (isEmbedFrameActive()) {
-    renderContent(true);
+    if (isProjectsTabActive()) {
+      renderManagerProjects();
+    } else if (!document.getElementById('tab-reporting').classList.contains('active')) {
+      renderContent(true);
+    }
     managerDataDirty = false;
   } else {
     managerDataDirty = true;
@@ -55,6 +64,8 @@ function switchSubTab(tab) {
     if (tab === 'assignment') {
         switchAssignmentSubTab(currentAssignmentSubTab);
         renderContent();
+    } else if (tab === 'projects') {
+        renderManagerProjects();
     } else if (tab === 'reporting') {
         refreshReporting();
     } else {
@@ -148,7 +159,12 @@ function setTZFilter(tz, btn) {
     currentTZ = tz;
     document.querySelectorAll('.filter-tz').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    updateMetrics(); renderContent();
+    updateMetrics();
+    if (isProjectsTabActive()) {
+        renderManagerProjects();
+    } else {
+        renderContent();
+    }
 }
 
 function getReportingContext() {

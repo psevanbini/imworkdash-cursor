@@ -69,16 +69,105 @@
   min-width: 160px;
 }
 
-#report-apply-range {
-  margin-left: 4px;
+.reporting-toolbar-group--data-actions {
+  align-items: flex-start;
 }
 
-.reporting-toolbar-group--refresh {
-  align-items: flex-start;
+.reporting-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 #report-refresh-data {
   min-width: 120px;
+}
+
+.report-actions-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.report-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--font-body);
+  color: var(--psq-blue-dark);
+  background: var(--psq-blue-01);
+  border: 1px solid var(--psq-border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.report-info-btn:hover,
+.report-info-btn:focus {
+  background: var(--psq-blue-light);
+  outline: 2px solid var(--psq-blue);
+  outline-offset: 2px;
+}
+
+.report-info-btn[aria-expanded="true"] {
+  background: var(--psq-blue-light);
+  border-color: var(--psq-blue);
+}
+
+.report-actions-popover {
+  position: absolute;
+  z-index: 200;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(300px, calc(100vw - 48px));
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--psq-blue-dark);
+  background: var(--psq-surface);
+  border: 1px solid var(--psq-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.report-actions-popover[hidden] {
+  display: none;
+}
+
+.report-actions-popover-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--psq-green-dark);
+}
+
+.report-actions-popover-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.report-actions-popover-list li {
+  margin-bottom: 6px;
+}
+
+.report-actions-popover-list li:last-child {
+  margin-bottom: 0;
+}
+
+.report-actions-popover-foot {
+  margin: 0 0 12px;
+  color: var(--psq-muted);
+}
+
+.report-actions-popover-close {
+  width: 100%;
+  justify-content: center;
 }
 
 .reporting-meta {
@@ -121,6 +210,23 @@
 
 .report-widget--wide {
   grid-column: 1 / -1;
+}
+
+/* Half-width pairs on one row (Reporting grid is 2 columns) */
+.report-widget[data-widget-id="rotation-days-off"],
+.report-widget[data-widget-id="rotation-readds"],
+.report-widget[data-widget-id="past-due-projects"],
+.report-widget[data-widget-id="time-to-value"] {
+  grid-column: span 1;
+}
+
+@media (max-width: 720px) {
+  .report-widget[data-widget-id="rotation-days-off"],
+  .report-widget[data-widget-id="rotation-readds"],
+  .report-widget[data-widget-id="past-due-projects"],
+  .report-widget[data-widget-id="time-to-value"] {
+    grid-column: 1 / -1;
+  }
 }
 
 .report-widget.is-dragging,

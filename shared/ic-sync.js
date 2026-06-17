@@ -79,6 +79,19 @@ var ICSync = (function () {
     return complexity + " (" + COMP_PTS[complexity] + ")";
   }
 
+  function projectTotalContributors(p) {
+    var total =
+      p.totalContributors != null
+        ? p.totalContributors
+        : (p.contributors ? p.contributors.length : 0);
+    return Math.max(0, parseInt(total, 10) || 0);
+  }
+
+  function formatProjectTeamSizeLabel(p) {
+    var n = projectTotalContributors(p);
+    return n + " (" + contributorScopePoints(n) + ")";
+  }
+
   function nameHash(str) {
     var h = 0;
     for (var i = 0; i < str.length; i++) {
@@ -497,6 +510,8 @@ var ICSync = (function () {
     formatProjectRoleLabel: formatProjectRoleLabel,
     formatProjectTypeLabel: formatProjectTypeLabel,
     formatProjectComplexityLabel: formatProjectComplexityLabel,
+    projectTotalContributors: projectTotalContributors,
+    formatProjectTeamSizeLabel: formatProjectTeamSizeLabel,
     buildDealsForIM: buildDealsForIM,
     buildDealCountMap: buildDealCountMap,
     dealCountForIM: dealCountForIM,

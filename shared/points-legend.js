@@ -129,8 +129,8 @@ var PointsLegend = (function () {
       "</tbody></table></section>" +
       '<section class="points-legend-section">' +
       "<h4>Strategic projects</h4>" +
-      '<p class="points-legend-formula">Each IM\'s project total = Role + Type + Complexity + Contributor scope</p>' +
-      '<p class="points-legend-note">Type and Complexity are set once per project by the project lead from proposal factors before the project is entered in the dashboard. Contributor scope uses the <strong>total contributor count (all teams)</strong> set by the lead when creating or editing the project. Only Role differs (Lead vs Contributor).</p>' +
+      '<p class="points-legend-formula">Each IM\'s project total = Role + Type + Complexity + Team size</p>' +
+      '<p class="points-legend-note">Type and Complexity are set once per project by the project lead from proposal factors before the project is entered in the dashboard. <strong>Team size</strong> uses the total contributor count (all teams) set by the lead when creating or editing the project. Only Role differs (Lead vs Contributor).</p>' +
       '<table class="points-legend-table"><thead><tr><th>Role</th><th>Points</th></tr></thead><tbody>' +
       tableRows(role) +
       "</tbody></table>" +
@@ -140,7 +140,7 @@ var PointsLegend = (function () {
       '<table class="points-legend-table" style="margin-top:12px;"><thead><tr><th>Complexity (per project)</th><th>Points</th></tr></thead><tbody>' +
       tableRows(comp) +
       "</tbody></table>" +
-      '<table class="points-legend-table" style="margin-top:12px;"><thead><tr><th>Total contributors (all teams)</th><th>Points</th></tr></thead><tbody>' +
+      '<table class="points-legend-table" style="margin-top:12px;"><thead><tr><th>Team size (all teams)</th><th>Points</th></tr></thead><tbody>' +
       CONTRIBUTOR_SCOPE_BANDS.map(function (b) {
         return "<tr><td>" + escapeHtml(b.label) + "</td><td>" + ptsLabel(b.pts) + "</td></tr>";
       }).join("") +
